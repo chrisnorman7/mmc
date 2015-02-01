@@ -1,0 +1,422 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>The world object &mdash; MMC Beta documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     'Beta',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="MMC Beta documentation" href="index.html" />
+    <link rel="next" title="Programming with MMC" href="programming.html" />
+    <link rel="prev" title="The Graphical User Interface" href="gui.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="programming.html" title="Programming with MMC"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="gui.html" title="The Graphical User Interface"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">MMC Beta documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="the-world-object">
+<span id="world-object"></span><h1>The world object<a class="headerlink" href="#the-world-object" title="Permalink to this headline">¶</a></h1>
+<p>This is the world class, from which all worlds are derived. All the below functions are available to the programmer without needing to use the world.member syntax, thanks to the <a class="reference internal" href="#world.World.getEnvironment" title="world.World.getEnvironment"><tt class="xref py py-func docutils literal"><span class="pre">getEnvironment</span></tt></a> function.</p>
+</div>
+<div class="section" id="the-world-api">
+<span id="world-api"></span><h1>The World API<a class="headerlink" href="#the-world-api" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="world.World">
+<em class="property">class </em><tt class="descclassname">world.</tt><tt class="descname">World</tt><big>(</big><em>filename=None</em><big>)</big><a class="headerlink" href="#world.World" title="Permalink to this definition">¶</a></dt>
+<dd><p>The main world class.</p>
+<dl class="method">
+<dt id="world.World.addAlias">
+<tt class="descname">addAlias</tt><big>(</big><em>alias</em>, <em>command</em><span class="optional">[</span>, <em>classes</em><span class="optional">[</span>, <em>title</em><span class="optional">[</span>, <em>simple</em><span class="optional">]</span><span class="optional">]</span><span class="optional">]</span><big>)</big><a class="headerlink" href="#world.World.addAlias" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds an alias to the world.</p>
+<ul class="simple">
+<li>alias is the command which will be used to invoke the alias, given as a regular expression.</li>
+<li>Command is the command to be sent to the mud when this alias is used.</li>
+<li>Classes is a list of the classes this alias applies too. It defaults to an empty list.</li>
+<li>title is the title of the alias, and defaults to the alias text itsself.</li>
+<li>simple is used to override the simple setting in the entry configuration.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.addTrigger">
+<tt class="descname">addTrigger</tt><big>(</big><em>trigger</em>, <em>command</em><span class="optional">[</span>, <em>classes</em><span class="optional">[</span>, <em>regexp</em><span class="optional">[</span>, <em>simple</em><span class="optional">[</span>, <em>stop</em><span class="optional">[</span>, <em>title</em><span class="optional">]</span><span class="optional">]</span><span class="optional">]</span><span class="optional">]</span><span class="optional">]</span><big>)</big><a class="headerlink" href="#world.World.addTrigger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a trigger to the world.</p>
+<ul class="simple">
+<li>Trigger is a regular expression of the line from the mud this trigger must match too.</li>
+<li>Command is the command which should be sent to the mud when this trigger is found.</li>
+<li>Classes is a list of the classes this trigger applies too. It defaults to an empty list.</li>
+<li>regexp tells the world if this trigger is a regular expression, or a literal string (use of literal strings can speed up performance).</li>
+<li>simple is used to override the simple setting in the entry configuration.</li>
+<li>stop tells the trigger to stop processing after it has completed. Defaults to True.</li>
+<li>title is the friendly name of the trigger, and defaults to trigger.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.addVariable">
+<tt class="descname">addVariable</tt><big>(</big><em>name</em>, <em>value</em><span class="optional">[</span>, <em>save = False</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#world.World.addVariable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a variable to the world.</p>
+<ul class="simple">
+<li>Name is the name of the variable.</li>
+<li>Value is the value of the variable.</li>
+<li>If save is True, then this variable will be saved along with the rest of the world.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.classToggle">
+<tt class="descname">classToggle</tt><big>(</big><em>class</em><span class="optional">[</span>, <em>state</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#world.World.classToggle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds or removes a class from the list of currently active classes.</p>
+<ul class="simple">
+<li>class is the class name.</li>
+<li>state is True or False, based on whether or not you want the class to be active or not, and defaults to the oposite state.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#world.World.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Closes the connection to the mud.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.execute">
+<tt class="descname">execute</tt><big>(</big><em>code</em><span class="optional">[</span>, <em>environment</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#world.World.execute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes code, giving environment as globals.</p>
+<p>Environment defaults to an empty dictionary, and is added to the overall environment for execution.</p>
+<p>If this function is called as a result of a trigger or alias, args will be given as c style args, where the full command is args[0], and all subsequent arguments are located in positions 1 to n.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.formatCode">
+<tt class="descname">formatCode</tt><big>(</big><em>code</em><big>)</big><a class="headerlink" href="#world.World.formatCode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given multi line code, strips the first level of indent, preparing it for compilation.</p>
+<ul class="simple">
+<li>code is the code to be modified.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.gag">
+<tt class="descname">gag</tt><big>(</big><span class="optional">[</span><em>number</em><span class="optional">[</span>, <em>system</em><span class="optional">]</span><span class="optional">]</span><big>)</big><a class="headerlink" href="#world.World.gag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gags number lines from being sent through system.</p>
+<ul class="simple">
+<li>If system is a list, work through all the values.</li>
+<li>Number defaults to 1, and system defaults to &#8216;output&#8217;.</li>
+</ul>
+<p>The possible values for system are: entry, output, braille, speak and all.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.gagged">
+<tt class="descname">gagged</tt><big>(</big><big>)</big><a class="headerlink" href="#world.World.gagged" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns what systems are gagged.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.getCommands">
+<tt class="descname">getCommands</tt><big>(</big><big>)</big><a class="headerlink" href="#world.World.getCommands" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the command log.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.getEnvironment">
+<tt class="descname">getEnvironment</tt><big>(</big><em>environment={}</em><big>)</big><a class="headerlink" href="#world.World.getEnvironment" title="Permalink to this definition">¶</a></dt>
+<dd><p>getEnvironment([environment]</p>
+<p>Gets the environment for execute and other tasks.</p>
+<ul class="simple">
+<li>environment is a dictionary to add to the over all environment, and defaults to an empty dictionary.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.getLog">
+<tt class="descname">getLog</tt><big>(</big><big>)</big><a class="headerlink" href="#world.World.getLog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the input and output log as a list.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.getOutput">
+<tt class="descname">getOutput</tt><big>(</big><big>)</big><a class="headerlink" href="#world.World.getOutput" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the real output log with all gags and substitutions, rather than the raw representation maintained by outputLog.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.help">
+<tt class="descname">help</tt><big>(</big><span class="optional">[</span><em>thing</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#world.World.help" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets help on thing.</p>
+<ul class="simple">
+<li>Thing defaults to the world object, and prints information similar to Python&#8217;s built-in help system.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.load">
+<tt class="descname">load</tt><big>(</big><em>filename=None</em><big>)</big><a class="headerlink" href="#world.World.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads the configuration from filename if provided, and executes the default script file if scripting is enabled.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.logCommand">
+<tt class="descname">logCommand</tt><big>(</big><em>command</em><big>)</big><a class="headerlink" href="#world.World.logCommand" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a command to the command log.</p>
+<ul class="simple">
+<li>command is the command to be logged.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.logOutput">
+<tt class="descname">logOutput</tt><big>(</big><em>line</em><big>)</big><a class="headerlink" href="#world.World.logOutput" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds lines to the output log.</p>
+<ul class="simple">
+<li>line is the line to be added to the output.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.matchClasses">
+<tt class="descname">matchClasses</tt><big>(</big><em>probable</em><span class="optional">[</span>, <em>actula</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#world.World.matchClasses" title="Permalink to this definition">¶</a></dt>
+<dd><p>Match the probable triggers against the actual classes provided.</p>
+<ul class="simple">
+<li>probably is the classes to be tested.</li>
+<li>actual is the actual classes loaded, and defaults to those currently active on the world.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.matchSource">
+<tt class="descname">matchSource</tt><big>(</big><em>line</em>, <em>thing</em><big>)</big><a class="headerlink" href="#world.World.matchSource" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attempt to match line to thing.</p>
+<ul class="simple">
+<li>line is the line of text to match.</li>
+<li>thing is the source to match line against.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.open">
+<tt class="descname">open</tt><big>(</big><big>)</big><a class="headerlink" href="#world.World.open" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens the connection to the mud if it&#8217;s not already open.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.output">
+<tt class="descname">output</tt><big>(</big><em>data</em><span class="optional">[</span>, <em>process</em><span class="optional">[</span>, <em>sub</em><span class="optional">[</span>, <em>log</em><span class="optional">]</span><span class="optional">]</span><span class="optional">]</span><big>)</big><a class="headerlink" href="#world.World.output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handles output, logging and printing.</p>
+<ul class="simple">
+<li>process decides whether or not to try and match triggers, and defaults to the setting in the output configuration.</li>
+<li>sub overrides any substitution performed with the substitute command.</li>
+<li>log decides whether to log the line or not. Set to false to output but not log.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.outputStatus">
+<tt class="descname">outputStatus</tt><big>(</big><em>line</em><big>)</big><a class="headerlink" href="#world.World.outputStatus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Output a line prepended by the current time stamp.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.playSound">
+<tt class="descname">playSound</tt><big>(</big><em>filename</em><span class="optional">[</span>, <em>volume</em><span class="optional">[</span>, <em>pan</em><span class="optional">[</span>, <em>frequency</em><span class="optional">[</span>, <em>looping</em><span class="optional">[</span>, <em>play</em><span class="optional">]</span><span class="optional">]</span><span class="optional">]</span><span class="optional">]</span><span class="optional">]</span><big>)</big><a class="headerlink" href="#world.World.playSound" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plays a sound with the specified parameters.</p>
+<ul class="simple">
+<li>filename is the full or relative path the the file to be played.</li>
+<li>volume is relative volume, given as a floating point number and defaults to 1.0 (full).</li>
+<li>pan is relative pan, given as a floating point number and defaults to 0.0.</li>
+<li>frequency is the frequency given in hz and defaults to 44100.</li>
+<li>looping is a boolean value which tells the sound to either play continuously, or only play once and defaults to False.</li>
+<li>play is a boolean telling the function to play the sound straight away, or simply return it, leaving it up to the user to play at some later time and defaults to Trye.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.removeAlias">
+<tt class="descname">removeAlias</tt><big>(</big><em>alias</em><big>)</big><a class="headerlink" href="#world.World.removeAlias" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes an alias from the world.</p>
+<ul class="simple">
+<li>Alias is the title of the alias to remove.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.removeTrigger">
+<tt class="descname">removeTrigger</tt><big>(</big><em>trigger</em><big>)</big><a class="headerlink" href="#world.World.removeTrigger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes a trigger from the world.</p>
+<ul class="simple">
+<li>Trigger is the title or the regular expression or literal string of the trigger you want to remove.</li>
+</ul>
+<p>Note: in cases where a trigger has been coded with a title, that must be used instead of the regular expression. All other triggers will have their title set to the regular expression or literal string they were created with.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.removeVariable">
+<tt class="descname">removeVariable</tt><big>(</big><em>name</em><span class="optional">[</span>, <em>delete</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#world.World.removeVariable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes a variable from the world&#8217;s list of variables to save with the world.</p>
+<ul class="simple">
+<li>Name is the name of the variable to remove.</li>
+<li>If delete is True, then the variable will also be deleted.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.save">
+<tt class="descname">save</tt><big>(</big><big>)</big><a class="headerlink" href="#world.World.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write the configuration to disk.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.send">
+<tt class="descname">send</tt><big>(</big><em>command</em><span class="optional">[</span>, <em>process</em><span class="optional">[</span>, <em>log</em><span class="optional">]</span><span class="optional">]</span><big>)</big><a class="headerlink" href="#world.World.send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send a command to the MUD.</p>
+<ul class="simple">
+<li>If process is True, check for aliases first.</li>
+<li>If log is True, log the command.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.substitute">
+<tt class="descname">substitute</tt><big>(</big><em>line</em><span class="optional">[</span>, <em>system</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#world.World.substitute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used in combination with addTrigger to replace lines of text in system.</p>
+<ul class="simple">
+<li>line is the line to replace the actual line with.</li>
+<li>system is either &#8216;output&#8217; (the output window&#8217;) or &#8216;log&#8217; (the output log).</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.ungag">
+<tt class="descname">ungag</tt><big>(</big><span class="optional">[</span><em>system</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#world.World.ungag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Turns gagging off for the specified system(s).</p>
+<ul class="simple">
+<li>If system is given as a list, work through the list ungagging all systems. See the help for gag for a list of the possible system values.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.writeToCon">
+<tt class="descname">writeToCon</tt><big>(</big><em>line</em><big>)</big><a class="headerlink" href="#world.World.writeToCon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes line directly to the telnet connection.</p>
+<ul class="simple">
+<li>line is the line to write to the connection.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="world.World.writeToLog">
+<tt class="descname">writeToLog</tt><big>(</big><em>type</em>, <em>line</em><big>)</big><a class="headerlink" href="#world.World.writeToLog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generic logging system. Dumps to disc every so often, depending on your log interval setting.</p>
+<ul class="simple">
+<li>type is a string describing the type of log entry this is.</li>
+<li>line is the line which should be ogged.</li>
+</ul>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">The world object</a></li>
+<li><a class="reference internal" href="#the-world-api">The World API</a></li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="gui.html"
+                        title="previous chapter">The Graphical User Interface</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="programming.html"
+                        title="next chapter">Programming with MMC</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/world.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="programming.html" title="Programming with MMC"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="gui.html" title="The Graphical User Interface"
+             >previous</a> |</li>
+        <li><a href="index.html">MMC Beta documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Chris Norman.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

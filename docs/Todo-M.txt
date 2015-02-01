@@ -1,0 +1,4 @@
+* World configuration dialogue instructions (world-options?)
+* Finish menus and details of the GUI
+* Detail miscellaneous keystrokes.
+* Spell check Chris's bollock aweful typing!

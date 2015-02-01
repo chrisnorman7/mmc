@@ -1,0 +1,126 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>The Source Object &mdash; MMC Beta documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     'Beta',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="MMC Beta documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">MMC Beta documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="the-source-object">
+<span id="source-object"></span><h1>The Source Object<a class="headerlink" href="#the-source-object" title="Permalink to this headline">¶</a></h1>
+<p>This object is used for aliases and triggers, and contains a couple of useful functions for the storage of code, and the serialisation of the resulting objects.</p>
+<p>Read the API docs to learn the features.</p>
+</div>
+<div class="section" id="the-source-object-api">
+<span id="source-api"></span><h1>The Source Object API<a class="headerlink" href="#the-source-object-api" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-source"></span><p>Aliases and triggers as objects.</p>
+<dl class="class">
+<dt id="source.Source">
+<em class="property">class </em><tt class="descclassname">source.</tt><tt class="descname">Source</tt><big>(</big><em>pattern</em>, <em>code</em>, <em>classes</em>, <em>simple</em>, <em>title</em><big>)</big><a class="headerlink" href="#source.Source" title="Permalink to this definition">¶</a></dt>
+<dd><p>The top level object from which aliases and triggers are derived.</p>
+<dl class="method">
+<dt id="source.Source.serialise">
+<tt class="descname">serialise</tt><big>(</big><big>)</big><a class="headerlink" href="#source.Source.serialise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Export the contents as (args, kwargs), ready to pass back into <a class="reference internal" href="world.html#world.World.addAlias" title="world.World.addAlias"><tt class="xref py py-func docutils literal"><span class="pre">addAlias()</span></tt></a>, or <a class="reference internal" href="world.html#world.World.addTrigger" title="world.World.addTrigger"><tt class="xref py py-func docutils literal"><span class="pre">addTrigger()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="source.Source.setCode">
+<tt class="descname">setCode</tt><big>(</big><em>code</em><big>)</big><a class="headerlink" href="#source.Source.setCode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds code to the object, compiling it ready for use.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">The Source Object</a></li>
+<li><a class="reference internal" href="#the-source-object-api">The Source Object API</a></li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/source.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">MMC Beta documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Chris Norman.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

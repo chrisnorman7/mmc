@@ -1,0 +1,9 @@
+.dropbox
+*.pyc
+*.ini
+*.zip
+*.exe
+MMC
+*.spec
+build
+dist

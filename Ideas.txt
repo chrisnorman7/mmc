@@ -1,0 +1,3 @@
+Write documentation.
+Write a log parser
+Include standardised logging in the main logging routine.
