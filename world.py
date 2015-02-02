@@ -168,7 +168,6 @@ class World(object):
   self.config.add_section('logging')
   self.config.set('logging', 'logdirectory', '', vtitle = 'Directory to store world log files', vvalidate = lambda value: None if (not value or os.path.isdir(value)) else 'Directory must exist. If you do not want logging, leave this field blank.', vcontrol = DirBrowseButton)
   self.config.set('logging', 'loginterval', '50', vtype = int, vtitle = 'After how many lines should the log be dumped to disk', vvalidate = lambda value: None if value > 10 else 'At least 10 lines must seperate dump opperations.')
-  self.config.set('logging', 'logformat', '{d}. {t}: {l}', vtitle = 'The format for log lines ({d} for date and time, {t} for type of entry, and {l} for line)', vvalidate = lambda value: None if '{l}' in value else 'The format must contain at least {l}')
   self.config.add_section('sounds')
   self.config.set('sounds', 'mastermute', False, vtitle = 'Mute sounds')
   self.config.set('sounds', 'mastervolume', 75, vtitle = 'Master volume', vvalidate = lambda value: None if value >= 0 and value <= 100 else 'Volume must be between 0 and 100.')
@@ -617,9 +616,8 @@ class World(object):
   l = self.config.get('logging', 'logdirectory')
   if os.path.isdir(l):
    b = ''
-   f = self.config.get('logging', 'logformat')
    for entryType, entryLine in self._log[self._logIndex:]:
-    b += '%s\n' % f.format(d = ctime(), l = entryLine, t = entryType)
+    b += '[%s (%s)] (%s) %s' % (ctime(), time(), entryType, entryLine)
    with open(os.path.join(l, self.logFile), 'a') as f:
     f.write(b)
     self._logIndex = len(self._log)
