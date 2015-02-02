@@ -1,6 +1,6 @@
 """The gui part of the worlds framework."""
 
-import wx, world, sys, accessibility, application, editor, re, threading, os, sendfile, webbrowser
+import wx, world, sys, accessibility, application, editor, re, threading, os, sendfile, webbrowser, finder, logparser
 from gui import MyGui
 from errors import *
 from time import sleep, time
@@ -92,6 +92,7 @@ class WorldFrame(MyGui.Frame):
   mb.Append(self.fileMenu, '&File')
   self.sendMenu = wx.Menu()
   self.Bind(wx.EVT_MENU, self.onSendFile, self.sendMenu.Append(wx.ID_ANY, 'Send &File', 'Send a file to the world'))
+  self.Bind(wx.EVT_MENU, self.onSendLog, self.sendMenu.Append(wx.ID_ANY, 'Send &Log', 'Send a log file for review'))
   mb.Append(self.sendMenu, '&Send')
   self.connectionMenu = wx.Menu()
   mb.Append(self.connectionMenu, '&Connection')
@@ -321,6 +322,7 @@ class WorldFrame(MyGui.Frame):
   self.world.outputBuffer = self.output
   self.world.environment['window'] = self
   self.world.environment['application'] = application
+  self.world.environment['find'] = finder.find
   for i in range(0, 10):
    self.AddAccelerator(wx.ACCEL_ALT, ord(str(i)), lambda event, i = 10 if i == 0 else i: self.speakLine(len(self.world.getOutput()) - i))
   self.AddAccelerator(wx.ACCEL_NORMAL, wx.WXK_F2, lambda event: self.world.config.toggle('sounds', 'mastermute'))
@@ -376,7 +378,11 @@ class WorldFrame(MyGui.Frame):
  
  def onSendFile(self, event = None):
   """Send a file to the world."""
-  sendfile.SendFileFrame(self.send, linesep = self.world.config.get('entry', 'commandsep')).Show(True)
+  wx.CallAfter(sendfile.SendFileFrame(self.world.send, linesep = self.world.config.get('entry', 'commandsep')).Show, True)
+ 
+ def onSendLog(self, event):
+  s = logparser.LogParserFrame(self.world)
+  wx.CallAfter(s.Show, True)
  
  def adjustVolume(self, amount = 1.0):
   """Adjust the output volume by small amounts."""

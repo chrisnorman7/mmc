@@ -14,3 +14,8 @@ The World API
 
 .. autoclass:: world.World
    :members:
+.. _world-options:
+
+==================
+The World Options Dialogue
+==================

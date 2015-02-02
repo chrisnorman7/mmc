@@ -1,5 +1,6 @@
 #pywin32
+future
 hg+http://hg.q-continuum.net/libloader#egg=libloader
 hg+http://hg.q-continuum.net/platform_utils#egg=platform_utils
 hg+http://hg.q-continuum.net/sound_lib#egg=sound_lib
-hg+http://hg.q-continuum.net/accessible_output2@26:2d5a68cedcce#egg=accessible_output2
+hg+http://hg.q-continuum.net/accessible_output2#egg=accessible_output2

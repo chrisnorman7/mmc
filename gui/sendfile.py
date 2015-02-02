@@ -38,6 +38,10 @@ class SendFileFrame(sc.SizedFrame):
   if not os.path.isfile(f):
    return wx.MessageBox('No such file: %s.' % f, 'Error', style = wx.ICON_ERROR)
   c = self.prefix.GetValue()
+  sep = self.linesep.GetValue()
+  c += sep
+  pre = self.preLine.GetValue()
+  post = self.postLine.GetValue()
   if self.ignore.GetValue():
    m = re.compile(self.ignore.GetValue())
   else:
@@ -46,6 +50,6 @@ class SendFileFrame(sc.SizedFrame):
    for line in f:
     line = line[:-1]
     if not m or not m.match(line):
-     c+= '%s%s%s%s' % (self.preLine.GetValue(), line, self.postLine.GetValue(), self.linesep.GetValue())
+     c+= '%s%s%s%s' % (pre, line, post, sep)
   self.callback(c + self.suffix.GetValue())
   self.Close(True)

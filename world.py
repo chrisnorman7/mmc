@@ -445,6 +445,7 @@ class World(object):
    process = self.config.getboolean('output', 'processtriggers')
   for line in data.split('\n'):
    self.onOutput()
+   toBeLogged = line
    if line and process:
     tobject = None
     results = []
@@ -486,7 +487,7 @@ class World(object):
     else:
      print line
     if log:
-     self.logOutput(self.logSub if self.logSub != None else line)
+     self.logOutput(self.logSub if self.logSub != None else toBeLogged)
      self._output.append(line)
      self.logSub = None
    if log:
@@ -606,7 +607,7 @@ class World(object):
   * line is the line which should be ogged.
   
   """
-  self._log.append((type, line))
+  self._log.append((type, time(), line))
   if len(self._log[self._logIndex:]) >= self.config.getint('logging', 'loginterval'):
    self.logFlush()
    return True
@@ -616,8 +617,8 @@ class World(object):
   l = self.config.get('logging', 'logdirectory')
   if os.path.isdir(l):
    b = ''
-   for entryType, entryLine in self._log[self._logIndex:]:
-    b += '[%s (%s)] (%s) %s' % (ctime(), time(), entryType, entryLine)
+   for entryType, entryTime, entryLine in self._log[self._logIndex:]:
+    b += '[%s (%s)] (%s) %s\n' % (ctime(entryTime), entryTime, entryType, entryLine)
    with open(os.path.join(l, self.logFile), 'a') as f:
     f.write(b)
     self._logIndex = len(self._log)
@@ -664,7 +665,7 @@ class World(object):
   Returns the command log.
   
   """
-  return [y for x, y in self._log if x == 'command']
+  return [z for x, y, z in self._log if x == 'command']
 
  def logOutput(self, line):
   """
@@ -686,15 +687,6 @@ class World(object):
   """
   return self._output
  
- def getLog(self):
-  """
-  getLog()
-  
-  Returns the input and output log as a list.
-  
-  """
-  return [y for x, y in self._log]
-
  def substitute(self, line, system = 'output'):
   """
   substitute(line[, system])
