@@ -1,4 +1,5 @@
 * World configuration dialogue instructions (world-options?)
+* Change GUI-<menu> over to use GUI-menu-<menu> for organization
 * Finish menus and details of the GUI
 * Detail miscellaneous keystrokes.
 * Spell check Chris's bollock aweful typing!

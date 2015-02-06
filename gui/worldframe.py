@@ -147,7 +147,7 @@ class WorldFrame(MyGui.Frame):
  def saveAs(self, event = None):
   """Save the current world under a new name."""
   w = self.world
-  dlg = wx.FileDialog(self, 'Save as', '', w.filename if w.filename else w.config.get('world', 'name') + w.fileext, style = wx.FD_SAVE)
+  dlg = wx.FileDialog(self, 'Save as', '', w.filename if w.filename else w.config.get('world', 'name') + world.fileext, style = wx.FD_SAVE)
   while dlg.ShowModal() != wx.ID_CANCEL:
    w.filename = dlg.GetPath()
    if not os.path.isfile(w.filename) or wx.MessageBox('Do you want to replace %s?' % w.filename, 'File exists', style = wx.YES_NO) == wx.YES:
@@ -400,6 +400,13 @@ class WorldFrame(MyGui.Frame):
  def onHelp(self, event = None):
   """Displays HTML help."""
   dir = 'docs'
-  if application.appVersion.endswith('B'):
-   dir = os.path.join(dir, '_build', 'html')
-  webbrowser.open(os.path.join(application.appDirectory, dir, 'index.html'))
+  page = 'index.html'
+  if not dir in os.listdir(application.appDirectory):
+   dir = 'http://www.code-metropolis.com/mmc/docs/%s' % page
+  else:
+   dir = os.path.join(application.appDirectory, dir)
+   if '_build' in os.listdir(dir):
+    dir = os.path.join(dir, '_build', 'html', page)
+   else:
+    dir = os.path.join(dir, page)
+  webbrowser.open(dir)

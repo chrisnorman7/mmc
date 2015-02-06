@@ -1,8 +1,10 @@
 from shutil import rmtree, copytree, copy
-from application import appName, appVersion
-from os import system, rename, listdir, walk, path, mkdir
+from application import appName, appVersion, appMinorVersion
+from os import system, rename, listdir, walk, path, mkdir, chdir, getcwd
 import zipfile, plistlib
 import sys
+
+cwd = getcwd()
 
 dels = [
  'dist',
@@ -43,6 +45,15 @@ elif sys.platform == 'darwin':
 else:
  quit("Don't know how to run on %s." % sys.platform)
 
+if not appMinorVersion:
+ print 'Adding docs.'
+ chdir('docs')
+ system('make html')
+ chdir(cwd)
+ copytree(path.join('docs', '_build', 'html'), path.join(xd, 'docs'))
+else:
+ print 'Not adding docs.'
+
 for d in listdir('xtras'):
  origin = path.join('xtras', d)
  dest = path.join(xd, d)
@@ -58,6 +69,6 @@ zf = zipfile.ZipFile(z, 'w')
 for root, dirs, files in walk(output):
  for file in files:
   p = path.join(root, file)
-  zf.write(p, p[5:])
+  zf.write(p)
 zf.close()
 print 'Zip file created.'

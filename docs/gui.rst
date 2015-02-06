@@ -23,3 +23,47 @@ The file menu contains options for manipulating or loading world files. Options 
 * Exit:
   Exit MMC.
 
+.. _GUI-Send:
+
+===================
+Send Menu
+===================
+
+* Send File:
+This option sends a file to the MUD. If you are not connected, nothing will happen. If you are connected, all lines of the file will be parsed as commands.
+
+* Send log:
+This will prompt you to locate an MMC-log formatted file to parse. The log parser will allow you to replay logs as if you were witnessing them in realtime. Note: files that have not been formatted for the MMC logging specification will not work.
+
+.. _GUI-Connection:
+
+===================
+Connection Menu
+===================
+
+* Open connection:
+Open a connection to the existing world. This can also be completed by pressing ctrl+K
+* Close connection:
+Disconnect from the active world. This can also be completed by pressing ctrl+shift+K.
+
+.. _GUI-programming:
+
+===================
+Programming Menu
+===================
+
+* Add alias:
+Add an alias to your .mmcworld file. Aliases are described 
+:ref:`here <world-aliases>`.
+* Edit aliases:
+Edit or delete an existing alias. Aliases are described 
+:ref:`here <world-aliases>`.
+You can also use ctrl+shift+A as an accelerator to reach this dialogue.
+* Add trigger:
+Add a trigger to your .mmcworld file. Triggers are described 
+:ref:`here <world-triggers>`.
+* Edit triggers:
+Edit or delete an existing trigger. Triggers are described
+:ref:`here <world-triggers>`.
+You can also use ctrl+shift+T as an accelerator to reach this dialogue.
+

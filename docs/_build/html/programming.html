@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Programming with MMC &mdash; MMC Beta documentation</title>
+    <title>Programming with MMC &mdash; MMC 1.1 Beta documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     'Beta',
+        VERSION:     '1.1 Beta',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,8 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="MMC Beta documentation" href="index.html" />
+    <link rel="top" title="MMC 1.1 Beta documentation" href="index.html" />
+    <link rel="next" title="Objects used in MMC" href="objects.html" />
     <link rel="prev" title="The Graphical User Interface" href="gui.html" /> 
   </head>
   <body>
@@ -37,9 +38,12 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
+          <a href="objects.html" title="Objects used in MMC"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
           <a href="gui.html" title="The Graphical User Interface"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">MMC Beta documentation</a> &raquo;</li> 
+        <li><a href="index.html">MMC 1.1 Beta documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -56,7 +60,7 @@
 </div>
 <div class="section" id="introduction">
 <h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
-<p>At the heart of MMC is <a class="reference internal" href="world.html#world-object"><em>The world object</em></a>. As in <a class="reference external" href="http://www.python.org">Python</a>, everything is an <a class="reference external" href="https://docs.python.org/2/tutorial/classes.html">object</a>, including the connected world, <em class="xref std std-ref">window-object</em>, and the <em class="xref std std-ref">triggers</em> and <em class="xref std std-ref">aliases</em> you define.</p>
+<p>At the heart of MMC is <a class="reference internal" href="world.html#world-object"><em>The world object</em></a>. As in <a class="reference external" href="http://www.python.org">Python</a>, everything is an <a class="reference external" href="https://docs.python.org/2/tutorial/classes.html">object</a>, including the connected world, <a class="reference internal" href="window.html#window-object"><em>The Window Object</em></a>, and the <em class="xref std std-ref">triggers</em> and <em class="xref std std-ref">aliases</em> you define.</p>
 <p>Let&#8217;s dive right in:</p>
 </div>
 <div class="section" id="your-first-script">
@@ -65,7 +69,7 @@
 </div>
 <div class="section" id="the-command-character">
 <h1>The Command Character<a class="headerlink" href="#the-command-character" title="Permalink to this headline">¶</a></h1>
-<p>Begin your command with the Command Character, which can be configured from the <em class="xref std std-ref">entry-tab</em> of the <em class="xref std std-ref">world-options</em> window.</p>
+<p>Begin your command with the Command Character, which can be configured from the <em class="xref std std-ref">entry-tab</em> of the <a class="reference internal" href="world.html#world-options"><em>The World Options Dialogue</em></a> window.</p>
 <p>By default this is a / character, so your command might look like this:</p>
 <div class="highlight-python"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1</pre></div></td><td class="code"><div class="highlight"><pre>/print &quot;Hello world.&quot;
 </pre></div>
@@ -132,7 +136,7 @@ name &#39;asdf&#39; is not defined
 <div class="highlight-python"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1</pre></div></td><td class="code"><div class="highlight"><pre>tell jo The potion is at the house on the eastern road.
 </pre></div>
 </td></tr></table></div>
-<p>You can change the regular expression used for this magic in <em class="xref std std-ref">scripting-tab</em> of <em class="xref std std-ref">world-options</em>.</p>
+<p>You can change the regular expression used for this magic in <em class="xref std std-ref">scripting-tab</em> of <a class="reference internal" href="world.html#world-options"><em>The World Options Dialogue</em></a>.</p>
 <p>If there is no variable matching your command, MMC simply sends the text verbatim.</p>
 </div>
 <div class="section" id="id3">
@@ -161,13 +165,13 @@ say My favourite fruits are @{&#39;, &#39;.join(world.fruits)}.
 <div class="highlight-python"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1</pre></div></td><td class="code"><div class="highlight"><pre>say My favourite fruits are grapes, apples, oranges, lemons, and bananas.
 </pre></div>
 </td></tr></table></div>
-<p>You can change the regular expression used for this magic in <em class="xref std std-ref">scripting-tab</em> of <em class="xref std std-ref">world-options</em>.</p>
+<p>You can change the regular expression used for this magic in <em class="xref std std-ref">scripting-tab</em> of <a class="reference internal" href="world.html#world-options"><em>The World Options Dialogue</em></a>.</p>
 </div>
 <div class="section" id="id4">
 <h1>Script Files<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h1>
 <p>Script files are by far the most powerful method of programming with MMC.</p>
-<p>These files are just Python files, and are executed from inside MMC, which provides <a class="reference external" href="https://docs.python.org/2/library/functions.html#globals">globals</a> and <a class="reference external" href="https://docs.python.org/2/library/functions.html#locals">locals</a> such as <a class="reference internal" href="world.html#world-object"><em>The world object</em></a>, and <em class="xref std std-ref">window-object</em>.</p>
-<p>To have a script load each time you open your world, you need to set up your <em class="xref std std-ref">startfile-option</em> in <em class="xref std std-ref">scripting-tab</em> of <em class="xref std std-ref">world-options</em>.</p>
+<p>These files are just Python files, and are executed from inside MMC, which provides <a class="reference external" href="https://docs.python.org/2/library/functions.html#globals">globals</a> and <a class="reference external" href="https://docs.python.org/2/library/functions.html#locals">locals</a> such as <a class="reference internal" href="world.html#world-object"><em>The world object</em></a>, and <a class="reference internal" href="window.html#window-object"><em>The Window Object</em></a>.</p>
+<p>To have a script load each time you open your world, you need to set up your <em class="xref std std-ref">startfile-option</em> in <em class="xref std std-ref">scripting-tab</em> of <a class="reference internal" href="world.html#world-options"><em>The World Options Dialogue</em></a>.</p>
 <p>This file gets executed once your world is loaded, just before it connects.</p>
 <p>In this way, you can instantly load triggers and aliases.</p>
 <p>Beware though, you cannot load hotkeys until :ref:window-object` has been assigned to the world. To work around this, simply have your keys created in response to a trigger which you know appears soon after the connections is established.</p>
@@ -198,6 +202,9 @@ say My favourite fruits are @{&#39;, &#39;.join(world.fruits)}.
   <h4>Previous topic</h4>
   <p class="topless"><a href="gui.html"
                         title="previous chapter">The Graphical User Interface</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="objects.html"
+                        title="next chapter">Objects used in MMC</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="_sources/programming.txt"
@@ -230,9 +237,12 @@ say My favourite fruits are @{&#39;, &#39;.join(world.fruits)}.
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
+          <a href="objects.html" title="Objects used in MMC"
+             >next</a> |</li>
+        <li class="right" >
           <a href="gui.html" title="The Graphical User Interface"
              >previous</a> |</li>
-        <li><a href="index.html">MMC Beta documentation</a> &raquo;</li> 
+        <li><a href="index.html">MMC 1.1 Beta documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

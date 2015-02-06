@@ -31,7 +31,7 @@ class SourceFrame(sc.SizedFrame):
    self.Close(True)
 
 class AliasFrame(SourceFrame):
- def __init__(self, alias = '', code = '', classes = [], simple = None, title = None, add = None, remove = None):
+ def __init__(self, alias = '', code = '', classes = [], simple = False, title = None, add = None, remove = None):
   super(AliasFrame, self).__init__('Edit alias', simple = simple)
   self.type = 'alias'
   self.addFunc = add
@@ -60,7 +60,7 @@ class AliasFrame(SourceFrame):
 
 
 class TriggerFrame(SourceFrame):
- def __init__(self, trigger = '', code = '', classes = [], regexp = True, simple = None, stop = True, title = None, add = None, remove = None):
+ def __init__(self, trigger = '', code = '', classes = [], regexp = True, simple = False, stop = True, title = None, add = None, remove = None):
   super(TriggerFrame, self).__init__('Edit trigger', simple = simple)
   self.type = 'trigger'
   self.addFunc = add

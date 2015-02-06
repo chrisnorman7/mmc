@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>The Graphical User Interface &mdash; MMC Beta documentation</title>
+    <title>The Graphical User Interface &mdash; MMC 1.1 Beta documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     'Beta',
+        VERSION:     '1.1 Beta',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,9 +23,9 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="MMC Beta documentation" href="index.html" />
-    <link rel="next" title="The world object" href="world.html" />
-    <link rel="prev" title="Introduction" href="introduction.html" /> 
+    <link rel="top" title="MMC 1.1 Beta documentation" href="index.html" />
+    <link rel="next" title="Programming with MMC" href="programming.html" />
+    <link rel="prev" title="Getting Started with MMC" href="gettingstarted.html" /> 
   </head>
   <body>
     <div class="related">
@@ -38,12 +38,12 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="world.html" title="The world object"
+          <a href="programming.html" title="Programming with MMC"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="introduction.html" title="Introduction"
+          <a href="gettingstarted.html" title="Getting Started with MMC"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">MMC Beta documentation</a> &raquo;</li> 
+        <li><a href="index.html">MMC 1.1 Beta documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -61,7 +61,7 @@
 <p>The file menu contains options for manipulating or loading world files. Options are explained below.</p>
 <ul class="simple">
 <li>New:
-Opens a dialogue prompting for options to include in your new world. For more information on this, see <em class="xref std std-ref">the section regarding world properties</em>.</li>
+Opens a dialogue prompting for options to include in your new world. For more information on this, see <a class="reference internal" href="world.html#world-options"><em>the section regarding world properties</em></a>.</li>
 <li>Open:
 Loads a world file. Should be of type .mmcworld.</li>
 <li>Save/Save As:
@@ -69,6 +69,45 @@ Save an actively open world, or save a separate copy elsewhere.</li>
 <li>Exit:
 Exit MMC.</li>
 </ul>
+</div>
+<div class="section" id="send-menu">
+<span id="gui-send"></span><h1>Send Menu<a class="headerlink" href="#send-menu" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li>Send File:</li>
+</ul>
+<p>This option sends a file to the MUD. If you are not connected, nothing will happen. If you are connected, all lines of the file will be parsed as commands.</p>
+<ul class="simple">
+<li>Send log:</li>
+</ul>
+<p>This will prompt you to locate an MMC-log formatted file to parse. The log parser will allow you to replay logs as if you were witnessing them in realtime. Note: files that have not been formatted for the MMC logging specification will not work.</p>
+</div>
+<div class="section" id="connection-menu">
+<span id="gui-connection"></span><h1>Connection Menu<a class="headerlink" href="#connection-menu" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li>Open connection:</li>
+</ul>
+<p>Open a connection to the existing world. This can also be completed by pressing ctrl+K
+* Close connection:
+Disconnect from the active world. This can also be completed by pressing ctrl+shift+K.</p>
+</div>
+<div class="section" id="programming-menu">
+<span id="gui-programming"></span><h1>Programming Menu<a class="headerlink" href="#programming-menu" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li>Add alias:</li>
+</ul>
+<p>Add an alias to your .mmcworld file. Aliases are described
+<em class="xref std std-ref">here</em>.
+* Edit aliases:
+Edit or delete an existing alias. Aliases are described
+<em class="xref std std-ref">here</em>.
+You can also use ctrl+shift+A as an accelerator to reach this dialogue.
+* Add trigger:
+Add a trigger to your .mmcworld file. Triggers are described
+<em class="xref std std-ref">here</em>.
+* Edit triggers:
+Edit or delete an existing trigger. Triggers are described
+<em class="xref std std-ref">here</em>.
+You can also use ctrl+shift+T as an accelerator to reach this dialogue.</p>
 </div>
 
 
@@ -81,14 +120,17 @@ Exit MMC.</li>
   <ul>
 <li><a class="reference internal" href="#">The Graphical User Interface</a></li>
 <li><a class="reference internal" href="#file-menu">File Menu</a></li>
+<li><a class="reference internal" href="#send-menu">Send Menu</a></li>
+<li><a class="reference internal" href="#connection-menu">Connection Menu</a></li>
+<li><a class="reference internal" href="#programming-menu">Programming Menu</a></li>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="introduction.html"
-                        title="previous chapter">Introduction</a></p>
+  <p class="topless"><a href="gettingstarted.html"
+                        title="previous chapter">Getting Started with MMC</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="world.html"
-                        title="next chapter">The world object</a></p>
+  <p class="topless"><a href="programming.html"
+                        title="next chapter">Programming with MMC</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="_sources/gui.txt"
@@ -121,12 +163,12 @@ Exit MMC.</li>
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="world.html" title="The world object"
+          <a href="programming.html" title="Programming with MMC"
              >next</a> |</li>
         <li class="right" >
-          <a href="introduction.html" title="Introduction"
+          <a href="gettingstarted.html" title="Getting Started with MMC"
              >previous</a> |</li>
-        <li><a href="index.html">MMC Beta documentation</a> &raquo;</li> 
+        <li><a href="index.html">MMC 1.1 Beta documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

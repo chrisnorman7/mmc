@@ -1,6 +1,8 @@
 import wx, os, multiprocessing
 maxThreads = multiprocessing.cpu_count()
-appVersion = '0.1B'
+appMajorVersion = '1.1'
+appMinorVersion = 'Beta'
+appVersion = '%s%s' % (appMajorVersion, (' ' + appMinorVersion if appMinorVersion else ''))
 appName = 'MMC'
 appDescription = 'A MUD client written in pure Python. Features trigger, alias, hotkey, sound and support for assistive technologies.'
 appVendorName = 'Software Metropolis'
