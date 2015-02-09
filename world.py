@@ -9,7 +9,7 @@ from confmanager import ConfManager, parser
 from wx.lib.filebrowsebutton import *
 from wx.lib.agw.floatspin import FloatSpin
 from random import Random
-import threading, os, re, wx, accessibility, json, unicodedata, codecs, source, match, sys
+import threading, os, re, wx, accessibility, json, unicodedata, codecs, source, match, sys, colour
 from time import ctime, time, strftime
 from types import NoneType
 
@@ -72,8 +72,6 @@ class World(object):
  
  def __init__(self, filename = None):
   """Create all the default config, then you can use .load(filename) to load the config from disk."""
-  self.escape = chr(27)
-  self.colourRe = re.compile(r'(%s\[([^m]+)m)' % self.escape)
   encodeTest = lambda value: None if codecs.getencoder(value) else 'Traceback should be self explanitory'
   self.logEncoding = 'UTF-8'
   self.normalise = lambda value: unicodedata.normalize(self.config.get('entry', 'unicodeform'), unicode(value)).encode(self.config.get('entry', 'encoding'), 'ignore')
@@ -451,7 +449,7 @@ class World(object):
   for line in data.split('\n'):
    self.onOutput()
    actual = line
-   for full, code in re.findall(self.colourRe, line):
+   for full, code in re.findall(colour.colourRe, line):
     line = line.replace(full, '')
    toBeLogged = line
    if line and process:

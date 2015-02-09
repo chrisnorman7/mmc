@@ -21,6 +21,10 @@ class OutputCtrl(wx.TextCtrl):
  """The text control used for the output window."""
  def write(self, text):
   wx.CallAfter(super(OutputCtrl, self).write, text)
+ 
+ def __init__(self, *args, **kwargs):
+  super(OutputCtrl, self).__init__(*args, **kwargs)
+  self._defaultStyle = self.GetDefaultStyle()
 
 class WorldFrame(MyGui.Frame):
  """Main window object."""
@@ -193,11 +197,6 @@ class WorldFrame(MyGui.Frame):
  def onEnter(self, event = None, clear = True):
   """Enter was pressed, handle commands from the entry line."""
   v = self.entry.GetValue()
-  i = self.entry.GetInsertionPoint()
-  if i < len(v):
-   v = v[0:i - 1] + v[i:]
-  if v and v[-1] == '\n':
-   v = v[:-1]
   if clear:
    self.entry.Clear()
   self.commandIndex = 0
