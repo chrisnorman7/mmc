@@ -72,6 +72,8 @@ class World(object):
  
  def __init__(self, filename = None):
   """Create all the default config, then you can use .load(filename) to load the config from disk."""
+  self.escape = chr(27)
+  self.colourRe = re.compile(r'(%s\[([^m]+)m)' % self.escape)
   encodeTest = lambda value: None if codecs.getencoder(value) else 'Traceback should be self explanitory'
   self.logEncoding = 'UTF-8'
   self.normalise = lambda value: unicodedata.normalize(self.config.get('entry', 'unicodeform'), unicode(value)).encode(self.config.get('entry', 'encoding'), 'ignore')
@@ -448,6 +450,9 @@ class World(object):
    process = self.config.getboolean('output', 'processtriggers')
   for line in data.split('\n'):
    self.onOutput()
+   actual = line
+   for full, code in re.findall(self.colourRe, line):
+    line = line.replace(full, '')
    toBeLogged = line
    if line and process:
     tobject = None
@@ -476,7 +481,7 @@ class World(object):
        self.outputStatus('Error in trigger: "%s".\n%s' % (trigger.title, str(e)))
      if trigger.stop:
       break
-   line = sub if sub != None else (self.outputSub if self.outputSub != None else line)
+   line = sub if sub != None else (self.outputSub if self.outputSub != None else actual)
    self.outputSub = None
    g = self.gagged()
    lineOk = not self.config.getboolean('output', 'gag') and (line or not self.config.getboolean('output', 'suppressblanklines'))
