@@ -470,7 +470,7 @@ class World(object):
       self.send(self.formatSimple(trigger.code, args), log = False)
      else:
       try:
-       self.execute(trigger.code, environment = {'args': args})
+       self.execute(trigger.code, environment = {'args': args, 'kwargs': kwargs})
       except Exception as e:
        self.onError(e)
        self.outputStatus('Error in trigger: "%s".\n%s' % (trigger.title, str(e)))
@@ -573,7 +573,7 @@ class World(object):
    m = self.matchSource(command, alias)
    if m:
     self.onAlias()
-    (alias, args) = m
+    (alias, args, kwargs) = m
     args = list(args)
     args.insert(0, command)
     if alias.simple:
