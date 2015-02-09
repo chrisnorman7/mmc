@@ -72,6 +72,8 @@ class World(object):
  
  def __init__(self, filename = None):
   """Create all the default config, then you can use .load(filename) to load the config from disk."""
+  encodeTest = lambda value: None if codecs.getencoder(value) else 'Traceback should be self explanitory'
+  self.logEncoding = 'UTF-8'
   self.normalise = lambda value: unicodedata.normalize(self.config.get('entry', 'unicodeform'), unicode(value)).encode(self.config.get('entry', 'encoding'), 'ignore')
   self.soundOutput = output.Output() # Just keep this stored.
   self._outputThread = None # The output thread, to be checked at the start of _threadManager.
@@ -143,7 +145,7 @@ class World(object):
   self.config.set('connection', 'hostname', '', vtype = str, vtitle = 'The hostname of the world', vvalidate = lambda value: None if value else 'Without a hostname, your world will not be able to connect.')
   self.config.set('connection', 'port', '0', vtype = int, vtitle = 'The port to use for this world', vvalidate = self.invalidPort)
   self.config.set('connection', 'autoconnect', 'True', vtitle = 'Automatically connect this world when it opens', vtype = bool)
-  self.config.set('connection', 'connectstring', '', vtitle = 'The connection string, using {u} for username and {p} for password')
+  self.config.set('connection', 'connectstring', '', vtitle = 'The connection string, using {u} for username and {p} for password, and seperating the commands with your command seperator')
   self.config.add_section('entry')
   self.config.set('entry', 'commandchar', '/', vtype = str, vvalidate = lambda value: None if (not re.match('[A-Za-z0-9]', value) and len(value) == 1) else 'The command character can not be a letter or a number, and must be only one character.', vtitle = 'The character to make commands get executed by the client rather than being sent straight to the mud')
   self.config.set('entry', 'helpchar', '?', vtitle = 'The command to indicate you need help on something (clear to disable)')
@@ -156,7 +158,7 @@ class World(object):
   self.config.set('entry', 'prompt', 'Entry', vtitle = 'Prompt')
   self.config.set('entry', 'escapeclearsentry', 'True', vtitle = 'Clear the entry line when the escape key is pressed', vtype = bool)
   self.config.set('entry', 'unicodeform', 'NFKD', vtitle = 'The unicode normalize form', vvalidate = lambda value: None if value in ['NFC', 'NFD', 'NFKC', 'NFKD'] else 'Form must be a valid form for unicodedata.normalize.')
-  self.config.set('entry', 'encoding', 'ascii', vtitle = 'Text encoding for commands sent to the server', vvalidate = lambda value: None if codecs.getencoder(value) else 'Traceback should be self explanitory')
+  self.config.set('entry', 'encoding', 'ascii', vtitle = 'Text encoding for commands sent to the server', vvalidate = encodeTest)
   self.config.add_section('output')
   self.config.set('output', 'suppressblanklines', 'True', vtype = bool, vtitle = 'Suppress blank lines in the output window')
   self.config.set('output', 'gag', 'False', vtype = bool, vtitle = 'Gag all output')
@@ -168,6 +170,7 @@ class World(object):
   self.config.add_section('logging')
   self.config.set('logging', 'logdirectory', '', vtitle = 'Directory to store world log files', vvalidate = lambda value: None if (not value or os.path.isdir(value)) else 'Directory must exist. If you do not want logging, leave this field blank.', vcontrol = DirBrowseButton)
   self.config.set('logging', 'loginterval', '50', vtype = int, vtitle = 'After how many lines should the log be dumped to disk', vvalidate = lambda value: None if value > 10 else 'At least 10 lines must seperate dump opperations.')
+  self.config.set('logging', 'logencoding', 'UTF-8', vtitle = 'The encoding for log files', vvalidate = encodeTest)
   self.config.add_section('sounds')
   self.config.set('sounds', 'mastermute', False, vtitle = 'Mute sounds')
   self.config.set('sounds', 'mastervolume', 75, vtitle = 'Master volume', vvalidate = lambda value: None if value >= 0 and value <= 100 else 'Volume must be between 0 and 100.')
@@ -453,12 +456,12 @@ class World(object):
      if line in self.literalTriggers.keys():
       trigger = self.literalTriggers[line]
       if self.matchClasses(trigger.classes):
-       results.append((trigger, []))
+       results.append((trigger, [], {}))
      if not self.triggers:
       break
      results += match.match(line, self.triggers.values(), self.matchSource).results
      break
-    for trigger, args in results:
+    for trigger, args, kwargs in results:
      self.onTrigger()
      if self.config.get_converted('output', 'printtriggers'):
       self.output(trigger.title, False)
@@ -616,11 +619,11 @@ class World(object):
  def logFlush(self):
   l = self.config.get('logging', 'logdirectory')
   if os.path.isdir(l):
-   b = ''
+   b = u''
    for entryType, entryTime, entryLine in self._log[self._logIndex:]:
     b += '[%s (%s)] (%s) %s\n' % (ctime(entryTime), entryTime, entryType, entryLine)
    with open(os.path.join(l, self.logFile), 'a') as f:
-    f.write(b)
+    f.write(b.encode(self.config.get('logging', 'logencoding')))
     self._logIndex = len(self._log)
  
  def execute(self, code, environment = dict()):
@@ -710,7 +713,7 @@ class World(object):
   * If system is a list, work through all the values.
   * Number defaults to 1, and system defaults to 'output'.
   
-  The possible values for system are: entry, output, braille, speak and all.
+  The possible values for system are: entry, output, braille, voice and all.
   
   """
   if system == 'all':
@@ -866,8 +869,8 @@ class World(object):
   
   """
   m = thing.pattern.match(line)
-  if self.matchClasses(thing.classes) and m:
-   return (thing, m.groups())
+  if m and self.matchClasses(thing.classes):
+   return (thing, m.groups(), m.groupdict())
  
  def _close(self):
   self.con = self._outputThread = None # Reset the connection to it's default state.

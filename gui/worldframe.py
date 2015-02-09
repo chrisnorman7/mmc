@@ -45,6 +45,12 @@ class WorldFrame(MyGui.Frame):
  
  def __init__(self, filename = None):
   """Initialise the window. If filename is provided, create a world too using :func:`gui.gui.WorldFrame.init`."""
+  if sys.platform == 'darwin':
+   self.ALT = wx.ACCEL_CMD
+   self.CTRL = wx.ACCEL_RAW_CTRL
+  else:
+   self.ALT = wx.ACCEL_ALT
+   self.CTRL = wx.ACCEL_CTRL
   self._outputPos = [time(), 0]
   self._reviewKeyPresses = 0
   self.reviewKeySpeed = 0.25
@@ -54,7 +60,7 @@ class WorldFrame(MyGui.Frame):
   self.panel = wx.Panel(self)
   s = wx.BoxSizer(wx.VERTICAL)
   if self.path == None:
-   l = wx.StaticText(self.panel, label = 'Open an existing world with Ctrl+O or create a new one with Ctrl+N to begin.', size = (200, 800))
+   l = wx.StaticText(self.panel, label = 'Open an existing world with {ctrl}+O or create a new one with {ctrl}+N to begin.'.format(ctrl = 'CMD' if sys.platform == 'darwin' else 'CTRL'), size = (200, 800))
    l.SetFocus()
    s.Add(l, 1, wx.GROW)
    self.SetTitle('(V%s)' % application.appVersion)
@@ -63,15 +69,15 @@ class WorldFrame(MyGui.Frame):
      self.open(None, a)
   else:
    self.output = OutputCtrl(self.panel, style = wx.TE_MULTILINE|wx.TE_RICH|wx.TE_READONLY)
-   self.panel.Bind(wx.EVT_SET_FOCUS, lambda event: self.world.onFocus(True))
-   self.panel.Bind(wx.EVT_KILL_FOCUS, lambda event: self.world.onFocus(False))
+   #self.panel.Bind(wx.EVT_SET_FOCUS, lambda event: self.world.onFocus(True))
+   #self.panel.Bind(wx.EVT_KILL_FOCUS, lambda event: self.world.onFocus(False))
    self.output.Bind(wx.EVT_CHAR, self.outputHook)
    s1 = wx.BoxSizer(wx.HORIZONTAL)
    self.prompt = wx.StaticText(self.panel)
-   self.entry = EntryCtrl(self.panel, style = wx.TE_RICH|wx.TE_PROCESS_ENTER|wx.TE_MULTILINE, size = (1100, 200))
+   self.entry = EntryCtrl(self.panel, style = wx.TE_RICH|wx.TE_MULTILINE, size = (1100, 200))
    self.commandIndex = 0
    wx.EVT_KEY_DOWN(self.entry, self.keyParser)
-   self.entry.Bind(wx.EVT_TEXT_ENTER, self.onEnter)
+   #self.entry.Bind(wx.EVT_TEXT_ENTER, self.onEnter)
    self.entry.SetFocus()
    s1.Add(self.prompt, 1, wx.EXPAND)
    s1.Add(self.entry, 1, wx.EXPAND)
@@ -205,8 +211,8 @@ class WorldFrame(MyGui.Frame):
   """Process any keys pressed while the entry line has focused."""
   kc = event.GetKeyCode()
   km = event.GetModifiers()
-  if km == wx.MOD_SHIFT and kc == wx.WXK_RETURN:
-   return self.onEnter(None, False)
+  if km in [wx.ACCEL_NORMAL, wx.ACCEL_SHIFT] and kc == wx.WXK_RETURN:
+   return self.onEnter(None, not km == wx.ACCEL_SHIFT)
   if not km:
    if kc in (wx.WXK_UP, wx.WXK_DOWN):
     e = self.entry.GetValue()
@@ -299,13 +305,6 @@ class WorldFrame(MyGui.Frame):
   """Add a world to the window, and get it ready for action."""
   if self.world != None or self.path == None:
    return
-  try:
-   self.world = world.World(self.path)
-   sys.stdout = self.world
-   self.world.onFocus = lambda value: None
-  except Exception as e:
-   wx.MessageBox(str(e), 'Problem with world file')
-   return self.Close(True)
   self.Bind(wx.EVT_MENU, self.openWorld, self.connectionMenu.Append(wx.ID_ANY, '&Open Connection\tCTRL+K', 'Open the connection to the world'))
   self.Bind(wx.EVT_MENU, lambda event: self.world.close(), self.connectionMenu.Append(wx.ID_ANY, '&Close connection\tCTRL+SHIFT+K', 'Close the world connection'))
   self.Bind(wx.EVT_MENU, self.addAlias, self.programmingMenu.Append(wx.ID_ANY, '&Add alias...', 'Add an alias to the world'))
@@ -314,20 +313,27 @@ class WorldFrame(MyGui.Frame):
   self.Bind(wx.EVT_MENU, self.editTriggers, self.programmingMenu.Append(wx.ID_ANY, '&Edit Triggers...\tCTRL+SHIFT+T', 'Edit triggers for the world'))
   self.Bind(wx.EVT_MENU, lambda event: self.world.config.get_gui().Show(True), self.optionsMenu.Append(wx.ID_ANY, '&World options...\tF12', 'View and edit the configuration for the current world'))
   self.Bind(wx.EVT_MENU, lambda event: self.world.commandQueue.clear(), self.optionsMenu.Append(wx.ID_ANY, '&Clear Command Queue', 'Clear the command queue'))
-  self.AddAccelerator(wx.ACCEL_CTRL|wx.ACCEL_SHIFT, ord('i'), lambda event: self.speakLine(self.outputPos))
-  self.AddAccelerator(wx.ACCEL_CTRL|wx.ACCEL_SHIFT, ord('u'), lambda event: self.speakLine(self.outputPos - 1))
-  self.AddAccelerator(wx.ACCEL_CTRL|wx.ACCEL_SHIFT, ord('o'), lambda event: self.speakLine(self.outputPos + 1))
-  self.AddAccelerator(wx.ACCEL_CTRL|wx.ACCEL_SHIFT, ord('p'), lambda event: self.speakLine(len(self.world.getOutput()) - 1))
-  self.AddAccelerator(wx.ACCEL_CTRL|wx.ACCEL_SHIFT, ord('y'), lambda event: self.speakLine(0))
+  self.AddAccelerator(self.CTRL|wx.ACCEL_SHIFT, ord('i'), lambda event: self.speakLine(self.outputPos))
+  self.AddAccelerator(self.CTRL|wx.ACCEL_SHIFT, ord('u'), lambda event: self.speakLine(self.outputPos - 1))
+  self.AddAccelerator(self.CTRL|wx.ACCEL_SHIFT, ord('o'), lambda event: self.speakLine(self.outputPos + 1))
+  self.AddAccelerator(self.CTRL|wx.ACCEL_SHIFT, ord('p'), lambda event: self.speakLine(len(self.world.getOutput()) - 1))
+  self.AddAccelerator(self.CTRL|wx.ACCEL_SHIFT, ord('y'), lambda event: self.speakLine(0))
+  for i in range(0, 10):
+   self.AddAccelerator(self.ALT, ord(str(i)), lambda event, i = 10 if i == 0 else i: self.speakLine(len(self.world.getOutput()) - i))
+  self.AddAccelerator(wx.ACCEL_NORMAL, wx.WXK_F2, lambda event: self.world.config.toggle('sounds', 'mastermute'))
+  self.AddAccelerator(wx.ACCEL_NORMAL, wx.WXK_F3, lambda event: self.adjustVolume(-1.0))
+  self.AddAccelerator(wx.ACCEL_NORMAL, wx.WXK_F4, lambda event: self.adjustVolume(1.0))
+  try:
+   self.world = world.World(self.path)
+   sys.stdout = self.world
+   self.world.onFocus = lambda value: None
+  except Exception as e:
+   wx.MessageBox(str(e), 'Problem with world file')
+   return self.Close(True)
   self.world.outputBuffer = self.output
   self.world.environment['window'] = self
   self.world.environment['application'] = application
   self.world.environment['find'] = finder.find
-  for i in range(0, 10):
-   self.AddAccelerator(wx.ACCEL_ALT, ord(str(i)), lambda event, i = 10 if i == 0 else i: self.speakLine(len(self.world.getOutput()) - i))
-  self.AddAccelerator(wx.ACCEL_NORMAL, wx.WXK_F2, lambda event: self.world.config.toggle('sounds', 'mastermute'))
-  self.AddAccelerator(wx.ACCEL_NORMAL, wx.WXK_F3, lambda event: self.adjustVolume(-1.0))
-  self.AddAccelerator(wx.ACCEL_NORMAL, wx.WXK_F4, lambda event: self.adjustVolume(1.0))
   self.prompt.SetLabel(self.world.config.get('entry', 'prompt'))
   self.world.config.updateFunc = self.updateFunc
   self.updateInstructions = {
