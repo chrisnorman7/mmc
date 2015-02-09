@@ -68,7 +68,7 @@ class WorldFrame(MyGui.Frame):
     for a in sys.argv[1:]:
      self.open(None, a)
   else:
-   self.output = OutputCtrl(self.panel, style = wx.TE_MULTILINE|wx.TE_RICH|wx.TE_READONLY)
+   self.output = OutputCtrl(self.panel, style = wx.TE_MULTILINE|wx.TE_RICH|wx.TE_READONLY|wx.TE_DONTWRAP)
    #self.panel.Bind(wx.EVT_SET_FOCUS, lambda event: self.world.onFocus(True))
    #self.panel.Bind(wx.EVT_KILL_FOCUS, lambda event: self.world.onFocus(False))
    self.output.Bind(wx.EVT_CHAR, self.outputHook)
