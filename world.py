@@ -126,7 +126,7 @@ class World(object):
   self.onOpen = lambda: None # The method to be called when the connection is opened.
   self.onConnected = lambda: None # The method to be called when the connection is established.
   self.onClose = lambda: None # The method to be called when the connection is closed.
-  self.onError = lambda error: self.errorBuffer.write(str(error))
+  self.onError = lambda error = None: self.errorBuffer.write(error)
   self.onTrigger = lambda: None
   self.onAlias = lambda: None
   # Create default configuration, and let self.load override it if the user wants:
@@ -422,7 +422,7 @@ class World(object):
    try:
     output = self.con.read_very_eager()
    except Exception as msg:
-    self.onError(msg)
+    self.onError()
     self.outputStatus(str(msg)) # Print the error to the world.
     self._close()
     break
@@ -484,7 +484,7 @@ class World(object):
       try:
        self.execute(trigger.code, environment = {'args': args, 'kwargs': kwargs})
       except Exception as e:
-       self.onError(e)
+       self.onError()
        self.outputStatus('Error in trigger: "%s".\n%s' % (trigger.title, str(e)))
      if trigger.stop:
       break
@@ -943,11 +943,10 @@ class ErrorBuffer(object):
   self._lastBeepTime = 0.0
   self.beepFunc = lambda: None
  
- def write(self, *args, **kwargs):
+ def write(self, text = None):
   t = time()
   if t - self._lastBeepTime >= self.beepInterval:
    self.beepFunc()
    self._lastBeepTime = t
-  args = list(args) + self.args
-  kwargs = dict(self.kwargs, **kwargs)
-  return self.func(*args, **kwargs)
+  if text:
+   return self.func(*self.args, **self.kwargs)
