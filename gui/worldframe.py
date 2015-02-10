@@ -20,7 +20,12 @@ class EntryCtrl(wx.TextCtrl):
 class OutputCtrl(wx.TextCtrl):
  """The text control used for the output window."""
  def write(self, text):
-  wx.CallAfter(super(OutputCtrl, self).write, text)
+  wx.CallAfter(self._write, text)
+ 
+ def _write(self, *args, **kwargs):
+  ip = self.GetInsertionPoint()
+  super(OutputCtrl, self).write(*args, **kwargs)
+  self.SetInsertionPoint((len(self.GetValue()) + 1) if not self.HasFocus() or self.GetParent().GetParent().world.config.get_converted('accessibility', 'outputscroll') else ip)
  
  def __init__(self, *args, **kwargs):
   super(OutputCtrl, self).__init__(*args, **kwargs)
@@ -196,6 +201,7 @@ class WorldFrame(MyGui.Frame):
  
  def onEnter(self, event = None, clear = True):
   """Enter was pressed, handle commands from the entry line."""
+  self.output.SetInsertionPoint(len(self.output.GetValue()) + 1)
   v = self.entry.GetValue()
   if clear:
    self.entry.Clear()
@@ -325,6 +331,7 @@ class WorldFrame(MyGui.Frame):
   try:
    self.world = world.World(self.path)
    sys.stdout = self.world
+   sys.stderr = self.world.errorBuffer
    self.world.onFocus = lambda value: None
   except Exception as e:
    wx.MessageBox(str(e), 'Problem with world file')

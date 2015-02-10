@@ -108,6 +108,7 @@ class World(object):
   self._logIndex = 0 # The entry of the last entry which was written to disk.
   self._output = [] # The text which should be in the output window.
   self.outputBuffer = None # Must contain a .write method.
+  self.errorBuffer = ErrorBuffer(self.output, [], {'process': False}) # Make errors beep.
   self.outputSub = None
   self.logSub = None # The line to write to the log in place of the actual line.
   self._gag = {
@@ -120,11 +121,12 @@ class World(object):
   self.invalidPort = lambda value: None if (value >= 1 and value <= 65535) else errors['InvalidPort']
   self.onSend = lambda: None
   self.onOutput = lambda: None
+  self.onBeep = lambda: self.errorBuffer.beepFunc()
   self.onSave = lambda: None # The method to be called when the world is saved.
   self.onOpen = lambda: None # The method to be called when the connection is opened.
   self.onConnected = lambda: None # The method to be called when the connection is established.
   self.onClose = lambda: None # The method to be called when the connection is closed.
-  self.onError = lambda error: sys.stdout.write('\a')
+  self.onError = lambda error: self.errorBuffer.write(str(error))
   self.onTrigger = lambda: None
   self.onAlias = lambda: None
   # Create default configuration, and let self.load override it if the user wants:
@@ -167,6 +169,7 @@ class World(object):
   self.config.add_section('accessibility')
   self.config.set('accessibility', 'speak', 'True', vtype = bool, vtitle = 'Speak output')
   self.config.set('accessibility', 'braille', 'True', vtitle = 'Braille output (if supported)', vtype = bool)
+  self.config.set('accessibility', 'outputscroll', 'True', vtype = bool, vtitle = 'Allow output window scrolling')
   self.config.add_section('logging')
   self.config.set('logging', 'logdirectory', '', vtitle = 'Directory to store world log files', vvalidate = lambda value: None if (not value or os.path.isdir(value)) else 'Directory must exist. If you do not want logging, leave this field blank.', vcontrol = DirBrowseButton)
   self.config.set('logging', 'loginterval', '50', vtype = int, vtitle = 'After how many lines should the log be dumped to disk', vvalidate = lambda value: None if value > 10 else 'At least 10 lines must seperate dump opperations.')
@@ -193,7 +196,6 @@ class World(object):
   Loads the configuration from filename if provided, and executes the default script file if scripting is enabled.
   
   """
-  sys.stderr = self
   self.aliases = OrderedDict() # The internal list of aliases.
   self.triggers = OrderedDict() # The internal list of triggers.
   self.literalTriggers = OrderedDict() # The triggers that don't contain any variable text.
@@ -449,6 +451,13 @@ class World(object):
   for line in data.split('\n'):
    self.onOutput()
    actual = line
+   if '\a' in line:
+    self.onBeep()
+    args = ('\a', '')
+    line = line.replace(*args)
+    actual = actual.replace(*args)
+    if not line:
+     continue
    for full, code in re.findall(colour.colourRe, line):
     line = line.replace(full, '')
    toBeLogged = line
@@ -922,3 +931,23 @@ class World(object):
    else:
     properties = 'None'
    print 'Properties of %s: %s.' % (type(thing), properties)
+
+class ErrorBuffer(object):
+ """A buffer for catching errors."""
+ def __init__(self, func, args, kwargs):
+  """Func is the function to pass the error text onto, with args and kwargs."""
+  self.func = func
+  self.args = args
+  self.kwargs = kwargs
+  self.beepInterval = 1.0
+  self._lastBeepTime = 0.0
+  self.beepFunc = lambda: None
+ 
+ def write(self, *args, **kwargs):
+  t = time()
+  if t - self._lastBeepTime >= self.beepInterval:
+   self.beepFunc()
+   self._lastBeepTime = t
+  args = list(args) + self.args
+  kwargs = dict(self.kwargs, **kwargs)
+  return self.func(*args, **kwargs)
