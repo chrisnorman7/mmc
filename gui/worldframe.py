@@ -19,17 +19,28 @@ class EntryCtrl(wx.TextCtrl):
 
 class OutputCtrl(wx.TextCtrl):
  """The text control used for the output window."""
- def write(self, text):
-  wx.CallAfter(self._write, text)
  
- def _write(self, *args, **kwargs):
+ def write(self, text):
+  """Calls self._write to stop OS X from bitching."""
+  self._write(text)
+ 
+ def _write(self, text):
   ip = self.GetInsertionPoint()
-  super(OutputCtrl, self).write(*args, **kwargs)
+  super(OutputCtrl, self).write(text)
   self.SetInsertionPoint((len(self.GetValue()) + 1) if not self.HasFocus() or self.GetParent().GetParent().world.config.get_converted('accessibility', 'outputscroll') else ip)
  
- def __init__(self, *args, **kwargs):
-  super(OutputCtrl, self).__init__(*args, **kwargs)
-  self._defaultStyle = self.GetDefaultStyle()
+ def output(self, stuff):
+  """Calls self._output to stop OS X from bitching."""
+  wx.CallAfter(self._output, stuff)
+ 
+ def _output(self, stuff):
+  """Writes output and colours it."""
+  for s in stuff:
+   if type(s) == tuple:
+    self.SetDefaultStyle(wx.TextAttr(*s))
+   else:
+    self._write(s)
+  self._write('\n')
 
 class WorldFrame(MyGui.Frame):
  """Main window object."""
@@ -206,9 +217,9 @@ class WorldFrame(MyGui.Frame):
   if clear:
    self.entry.Clear()
   self.commandIndex = 0
-  try:
+  if self.world.connected:
    self.world.send(v)
-  except UserError:
+  else:
    if wx.MessageBox('Do you want to connect this world?', 'World not connected', style = wx.YES_NO) == wx.YES:
     self.openWorld()
  
@@ -333,6 +344,8 @@ class WorldFrame(MyGui.Frame):
    sys.stdout = self.world
    sys.stderr = self.world.errorBuffer
    self.world.onFocus = lambda value: None
+   self.world.onSetColour = lambda *args: self.output.SetDefaultStyle(wx.TextAttr(*args))
+   self.world.onSetColour(*self.world.getColour())
   except Exception as e:
    wx.MessageBox(str(e), 'Problem with world file')
    return self.Close(True)

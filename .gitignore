@@ -7,3 +7,4 @@ MMC
 *.spec
 build
 dist
+*.app

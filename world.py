@@ -9,7 +9,7 @@ from confmanager import ConfManager, parser
 from wx.lib.filebrowsebutton import *
 from wx.lib.agw.floatspin import FloatSpin
 from random import Random
-import threading, os, re, wx, accessibility, json, unicodedata, codecs, source, match, sys, colour
+import threading, os, re, wx, accessibility, json, unicodedata, codecs, source, match, sys
 from time import ctime, time, strftime
 from types import NoneType
 
@@ -72,6 +72,8 @@ class World(object):
  
  def __init__(self, filename = None):
   """Create all the default config, then you can use .load(filename) to load the config from disk."""
+  self.escape = chr(27)
+  self.colourRe = re.compile(r'(%s\[(\d{1,2})m)' % self.escape)
   encodeTest = lambda value: None if codecs.getencoder(value) else 'Traceback should be self explanitory'
   self.logEncoding = 'UTF-8'
   self.normalise = lambda value: unicodedata.normalize(self.config.get('entry', 'unicodeform'), unicode(value)).encode(self.config.get('entry', 'encoding'), 'ignore')
@@ -79,6 +81,31 @@ class World(object):
   self._outputThread = None # The output thread, to be checked at the start of _threadManager.
   self.logFile = 'Output %s.log' % strftime('%Y-%m-%d %H-%M-%S').replace(':', '-')
   self.write = lambda value: self.output(value) # For tracebacks and the like.
+  self.colours = {
+   '0': ('white', 'black'),
+   '30': ('Black', None),
+   '31': ('red', None),
+   '32': ('green', None),
+   '33': ('yellow', None),
+   '34': ('blue', None),
+   '35': ('purple', None),
+   '36': ('cyan', None),
+   '37': ('white', None),
+   '39': ('white', None),
+   '40': (None, 'black'),
+   '41': (None, 'red'),
+   '42': (None, 'green'),
+   '43': (None, 'yellow'),
+   '44': (None, 'blue'),
+   '45': (None, 'purple'),
+   '46': (None, 'cyan'),
+   '47': (None, 'white'),
+   '49': (None, 'black')
+  }
+  self.onSetColour = lambda fg, bg: None
+  self._foregroundColour = None
+  self._backgroundColour = None
+  self.resetColour()
   self.commandQueue = deque() # Queue for self._send.
   self._commandInterval = 0.0 # Time since last command was executed.
   self.basicTypes = [
@@ -170,6 +197,7 @@ class World(object):
   self.config.set('accessibility', 'speak', 'True', vtype = bool, vtitle = 'Speak output')
   self.config.set('accessibility', 'braille', 'True', vtitle = 'Braille output (if supported)', vtype = bool)
   self.config.set('accessibility', 'outputscroll', 'True', vtype = bool, vtitle = 'Allow output window scrolling')
+  self.config.set('accessibility', 'printcolours', 'False', vtitle = 'Print colours in the output window', vtype = bool)
   self.config.add_section('logging')
   self.config.set('logging', 'logdirectory', '', vtitle = 'Directory to store world log files', vvalidate = lambda value: None if (not value or os.path.isdir(value)) else 'Directory must exist. If you do not want logging, leave this field blank.', vcontrol = DirBrowseButton)
   self.config.set('logging', 'loginterval', '50', vtype = int, vtitle = 'After how many lines should the log be dumped to disk', vvalidate = lambda value: None if value > 10 else 'At least 10 lines must seperate dump opperations.')
@@ -186,8 +214,8 @@ class World(object):
   self.config.set('scripting', 'startfile', '', vtitle = 'The main script file', vcontrol = FileBrowseButton, vvalidate = lambda value: None if not value or os.path.isfile(value) else 'This field must either be blank, or contain the path to a script file.')
   self.config.set('scripting', 'bypasscharacter', '>', vtitle = 'The command to bypass scripting on the command line')
   self.config.add_section('saving')
-  self.config.set('saving', 'aliases', 'True', vtype = bool, vtitle = 'Save aliases in the world file')
-  self.config.set('saving', 'triggers', 'True', vtype = bool, vtitle = 'Save triggers in the world file')
+  self.config.set('saving', 'aliases', 'False', vtype = bool, vtitle = 'Save aliases in the world file')
+  self.config.set('saving', 'triggers', 'False', vtype = bool, vtitle = 'Save triggers in the world file')
   self.config.set('saving', 'variables', 'True', vtype = bool, vtitle = 'Save variables in the world file')
   self.load(filename)
  
@@ -450,17 +478,28 @@ class World(object):
    process = self.config.getboolean('output', 'processtriggers')
   for line in data.split('\n'):
    self.onOutput()
-   actual = line
    if '\a' in line:
     self.onBeep()
-    args = ('\a', '')
-    line = line.replace(*args)
-    actual = actual.replace(*args)
+    line = line.replace('\a', '')
     if not line:
      continue
-   for full, code in re.findall(colour.colourRe, line):
-    line = line.replace(full, '')
    toBeLogged = line
+   actual = []
+   i = 0 # Where we're at in the list.
+   for chunk in re.split(self.colourRe, line):
+    if not i: # Chunk is to be printed.
+     actual.append(chunk)
+    elif i == 1: #This is the colour string to be replaced.
+     line = line.replace(chunk, '')
+    elif i == 2: # This is the bit which tells us which colour is needed.
+     i = -1 # Increment will set it to 0.
+     if chunk in self.colours.keys(): # Found the colour.
+      colours = self.colours[chunk]
+      actual.append({'style': [], 'colours': colours})
+      self.setColour(*colours)
+      if self.config.get_converted('accessibility', 'printcolours'): # Print colours to the output window.
+       actual.append('<%s on %s>' % (self._foregroundColour, self._backgroundColour))
+    i += 1
    if line and process:
     tobject = None
     results = []
@@ -488,17 +527,28 @@ class World(object):
        self.outputStatus('Error in trigger: "%s".\n%s' % (trigger.title, str(e)))
      if trigger.stop:
       break
-   line = sub if sub != None else (self.outputSub if self.outputSub != None else actual)
-   self.outputSub = None
+   if sub != None:
+    line = sub
+    self.resetColour()
+    actual = [line]
+   elif self.outputSub != None:
+    line = self.outputSub
+    self.resetColour()
+    actual = [line]
+    self.outputSub = None
    g = self.gagged()
    lineOk = not self.config.getboolean('output', 'gag') and (line or not self.config.getboolean('output', 'suppressblanklines'))
-   hasWrite = hasattr(self.outputBuffer, 'write')
+   hw = hasattr(self.outputBuffer, 'write')
+   ho = hasattr(self.outputBuffer, 'output')
+   hasWrite = hw or ho
+   line = ''.join([x for x in actual if type(x) != tuple])
    if g['output']:
     self.gag(-1, 'output')
    elif lineOk:
-    if hasWrite:
-     line += '\n'
-     self.outputBuffer.write(line)
+    if ho:
+     self.outputBuffer.output(actual)
+    elif hw:
+     self.outputBuffer.write(line + '\n')
     else:
      print line
     if log:
@@ -535,6 +585,11 @@ class World(object):
   """
   if type(command) not in [unicode, str]:
    raise TypeError('Can only send strings.')
+  self.onSend()
+  if log:
+   self.logCommand(command)
+  if self.config.getboolean('entry', 'echocommands'):
+   self.output(command, process = False, log = False)
   h = self.config.get('entry', 'helpchar')
   if h and command.startswith(h):
    command = command.replace(h, '').strip()
@@ -542,42 +597,38 @@ class World(object):
     try:
      command = eval(command, self.getEnvironment())
     except Exception as e:
-     return self.output(e, process = False)
-    return self.help(command)
+     self.output(e, process = False)
+    self.help(command)
    else:
     g = self.getEnvironment().keys()
     return self.output('Try to get help on the following globals: %s and %s.' % (', '.join(g[:-1]), g[-1]), process = False)
-  self.onSend()
-  if log:
-   self.logCommand(command)
-  if self.config.getboolean('entry', 'echocommands'):
-   self.output(command, process = False, log = False)
-  if process == None:
-   if command and command[0] == self.config.get('scripting', 'bypasscharacter'):
-    process = False
-    command = command[1:]
-   else:
-    process = self.config.getboolean('entry', 'processaliases')
-  if command and process:
-   cc = self.commandChar
-   if command.startswith(cc) and self.config.get_converted('scripting', 'enable'):
-    return self.execute(self.normalise(command[1:]))
-   vre = self.variableRe
-   sre = self.statementRe
-   if self.config.getboolean('scripting', 'expandvariables') and vre:
-    e = self.getEnvironment()
-    i = 1 # First occurance of a pattern 
-    for t, v in vre.findall(command):
-     if v in e.keys():
-      command = command.replace(t, str(e[v]))
-   if self.config.getboolean('scripting', 'expandstatements') and sre:
-    for t, s in sre.findall(command):
-     command = command.replace(t, unicode(eval(s, e)))
-   command = command.split(self.config.get('entry', 'commandsep'))
   else:
-   command = [command]
-  for c in command:
-   self.commandQueue.append(c)
+   if process == None:
+    if command and command[0] == self.config.get('scripting', 'bypasscharacter'):
+     process = False
+     command = command[1:]
+    else:
+     process = self.config.getboolean('entry', 'processaliases')
+   if command and process:
+    cc = self.commandChar
+    if command.startswith(cc) and self.config.get_converted('scripting', 'enable'):
+     return self.execute(self.normalise(command[1:]))
+    vre = self.variableRe
+    sre = self.statementRe
+    if self.config.getboolean('scripting', 'expandvariables') and vre:
+     e = self.getEnvironment()
+     i = 1 # First occurance of a pattern 
+     for t, v in vre.findall(command):
+      if v in e.keys():
+       command = command.replace(t, str(e[v]))
+    if self.config.getboolean('scripting', 'expandstatements') and sre:
+     for t, s in sre.findall(command):
+      command = command.replace(t, unicode(eval(s, e)))
+    command = command.split(self.config.get('entry', 'commandsep'))
+   else:
+    command = [command]
+   for c in command:
+    self.commandQueue.append(c)
  
  def _send(self, command):
   self._commandInterval = time()
@@ -931,6 +982,31 @@ class World(object):
    else:
     properties = 'None'
    print 'Properties of %s: %s.' % (type(thing), properties)
+ 
+ def resetColour(self):
+  """Resets the colours to white on black."""
+  self.setColour('white', 'black')
+ 
+ def setColour(self, fg = None, bg = None):
+  """
+  setColour([foreground[, background]])
+  
+  Sets both foreground and background colours.
+  
+  * foreground is the text colour.
+  * background is the background colour.
+  * If a value is omitted, it is replaced with it's current value.
+  
+  """
+  if fg == None: fg = self._foregroundColour
+  if bg == None: bg = self._backgroundColour
+  self._foregroundColour = fg
+  self._backgroundColour = bg
+  self.onSetColour(fg, bg)
+ 
+ def getColour(self):
+  """Returns the current foreground and background colours."""
+  return (self._foregroundColour, self._backgroundColour)
 
 class ErrorBuffer(object):
  """A buffer for catching errors."""
@@ -949,4 +1025,4 @@ class ErrorBuffer(object):
    self.beepFunc()
    self._lastBeepTime = t
   if text:
-   return self.func(*self.args, **self.kwargs)
+   return self.func(text, *self.args, **self.kwargs)
