@@ -73,7 +73,7 @@ class World(object):
  def __init__(self, filename = None):
   """Create all the default config, then you can use .load(filename) to load the config from disk."""
   self.escape = chr(27)
-  self.colourRe = re.compile(r'(%s\[(\d{1,2})m)' % self.escape)
+  self.colourRe = re.compile(r'(%s\[((?:\d;)?\d{1,2})m)' % self.escape)
   encodeTest = lambda value: None if codecs.getencoder(value) else 'Traceback should be self explanitory'
   self.logEncoding = 'UTF-8'
   self.normalise = lambda value: unicodedata.normalize(self.config.get('entry', 'unicodeform'), unicode(value)).encode(self.config.get('entry', 'encoding'), 'ignore')
@@ -102,10 +102,21 @@ class World(object):
    '47': (None, 'white'),
    '49': (None, 'black')
   }
-  self.onSetColour = lambda fg, bg: None
-  self._foregroundColour = None
-  self._backgroundColour = None
-  self.resetColour()
+  self.styles = {
+   '1': ('bold', True),
+   '3': ('italics', True),
+   '4': ('underline', True),
+   '5': ('blinking', True),
+   '9': ('strikethrough', True),
+   '22': ('bold', False),
+   '23': ('italics', False),
+   '24': ('underline', False),
+   '25': ('blinking', False),
+   '29': ('strikethrough', False)
+  }
+  (fg, bg) = self.colours['0']
+  self._fg = fg
+  self._bg = bg
   self.commandQueue = deque() # Queue for self._send.
   self._commandInterval = 0.0 # Time since last command was executed.
   self.basicTypes = [
@@ -193,11 +204,12 @@ class World(object):
   self.config.set('output', 'gag', 'False', vtype = bool, vtitle = 'Gag all output')
   self.config.set('output', 'processtriggers', 'True', vtitle = 'Process triggers', vtype = bool)
   self.config.set('output', 'printtriggers', 'False', vtitle = 'Print the titles or regular expressions of matched triggers to the output window (useful for debugging)', vtype = bool)
+  self.config.set('output', 'printunrecognisedformatters', 'False', vtitle = 'Print unrecognised formatters to the output window', vtype = bool)
   self.config.add_section('accessibility')
   self.config.set('accessibility', 'speak', 'True', vtype = bool, vtitle = 'Speak output')
   self.config.set('accessibility', 'braille', 'True', vtitle = 'Braille output (if supported)', vtype = bool)
   self.config.set('accessibility', 'outputscroll', 'True', vtype = bool, vtitle = 'Allow output window scrolling')
-  self.config.set('accessibility', 'printcolours', 'False', vtitle = 'Print colours in the output window', vtype = bool)
+  self.config.set('accessibility', 'printcolours', 'False', vtitle = 'Print ANSI formatters in the output window', vtype = bool)
   self.config.add_section('logging')
   self.config.set('logging', 'logdirectory', '', vtitle = 'Directory to store world log files', vvalidate = lambda value: None if (not value or os.path.isdir(value)) else 'Directory must exist. If you do not want logging, leave this field blank.', vcontrol = DirBrowseButton)
   self.config.set('logging', 'loginterval', '50', vtype = int, vtitle = 'After how many lines should the log be dumped to disk', vvalidate = lambda value: None if value > 10 else 'At least 10 lines must seperate dump opperations.')
@@ -480,26 +492,11 @@ class World(object):
    self.onOutput()
    if '\a' in line:
     self.onBeep()
-    line = line.replace('\a', '')
+    line = line.replace('\a', '<beep>' if self.config.get_converted('accessibility', 'printcolours') else '')
     if not line:
      continue
    toBeLogged = line
-   actual = []
-   i = 0 # Where we're at in the list.
-   for chunk in re.split(self.colourRe, line):
-    if not i: # Chunk is to be printed.
-     actual.append(chunk)
-    elif i == 1: #This is the colour string to be replaced.
-     line = line.replace(chunk, '')
-    elif i == 2: # This is the bit which tells us which colour is needed.
-     i = -1 # Increment will set it to 0.
-     if chunk in self.colours.keys(): # Found the colour.
-      colours = self.colours[chunk]
-      actual.append({'style': [], 'colours': colours})
-      self.setColour(*colours)
-      if self.config.get_converted('accessibility', 'printcolours'): # Print colours to the output window.
-       actual.append('<%s on %s>' % (self._foregroundColour, self._backgroundColour))
-    i += 1
+   (line, actual) = self._processLine(line)
    if line and process:
     tobject = None
     results = []
@@ -528,20 +525,16 @@ class World(object):
      if trigger.stop:
       break
    if sub != None:
-    line = sub
-    self.resetColour()
-    actual = [line]
+    (line, actual) = self._processLine(sub)
    elif self.outputSub != None:
-    line = self.outputSub
-    self.resetColour()
-    actual = [line]
+    (line, actual) = self._processLine(self.outputSub)
     self.outputSub = None
+   line = ''.join([x for x in actual if not isinstance(x, StyleObject)])
    g = self.gagged()
    lineOk = not self.config.getboolean('output', 'gag') and (line or not self.config.getboolean('output', 'suppressblanklines'))
    hw = hasattr(self.outputBuffer, 'write')
    ho = hasattr(self.outputBuffer, 'output')
    hasWrite = hw or ho
-   line = ''.join([x for x in actual if type(x) != tuple])
    if g['output']:
     self.gag(-1, 'output')
    elif lineOk:
@@ -983,30 +976,53 @@ class World(object):
     properties = 'None'
    print 'Properties of %s: %s.' % (type(thing), properties)
  
- def resetColour(self):
-  """Resets the colours to white on black."""
-  self.setColour('white', 'black')
- 
- def setColour(self, fg = None, bg = None):
-  """
-  setColour([foreground[, background]])
-  
-  Sets both foreground and background colours.
-  
-  * foreground is the text colour.
-  * background is the background colour.
-  * If a value is omitted, it is replaced with it's current value.
-  
-  """
-  if fg == None: fg = self._foregroundColour
-  if bg == None: bg = self._backgroundColour
-  self._foregroundColour = fg
-  self._backgroundColour = bg
-  self.onSetColour(fg, bg)
- 
- def getColour(self):
-  """Returns the current foreground and background colours."""
-  return (self._foregroundColour, self._backgroundColour)
+ def _processLine(self, line):
+  """Process line ready for output."""
+  actual = []
+  i = 0 # Where we're at in the list.
+  for chunk in re.split(self.colourRe, line):
+   if not i: # Chunk is to be printed.
+    actual.append(chunk)
+   elif i == 1: #This is the colour string to be replaced.
+    line = line.replace(chunk, '')
+   elif i == 2: # This is the bit which tells us which colour is needed.
+    i = -1 # Increment will set it to 0.
+    pc = self.config.get_converted('accessibility', 'printcolours')
+    for c in chunk.split(';'):
+     if c == '0': # Reset!
+      (fg, bg) = self.colours['0']
+      actual.append(StyleObject(foreground = fg, background = bg, bold = False, italics = False, underline = False, strikethrough = False, blink = False))
+      if pc:
+       actual.append('<reset>')
+     elif c in self.colours.keys(): # Found the colour.
+      (fg, bg) = self.colours[c]
+      text = ''
+      if fg:
+       self._fg = fg
+       text = '%s text' % fg
+      if bg:
+       self._bg = bg
+       text += '%s%s background' % (' on a ' if text else '', bg)
+      actual.append(StyleObject(foreground = fg, background = bg))
+      if pc: # Print colours to the output window.
+       actual.append('<%s>' % text)
+     elif chunk in ['7', '27']: # Inverse on and off...
+      (fg, bg) = (self._fg, self._bg)
+      actual.append(StyleObject(foreground = bg, background = fg))
+      if pc:
+       actual.append('<%s>' % 'inverse' if chunk == '7' else '/inverse')
+     elif chunk in self.styles.keys():
+      s, v = self.styles[chunk]
+      o = StyleObject()
+      setattr(o, s, v)
+      actual.append(o)
+      if pc:
+       actual.append('<%s%s>' % ('' if v else '/', s))
+     else:
+      if self.config.get_converted('output', 'printunrecognisedformatters'):
+       actual.append('<Unrecognised: %s>' % chunk)
+   i += 1
+  return (line, actual)
 
 class ErrorBuffer(object):
  """A buffer for catching errors."""
@@ -1026,3 +1042,14 @@ class ErrorBuffer(object):
    self._lastBeepTime = t
   if text:
    return self.func(text, *self.args, **self.kwargs)
+
+class StyleObject(object):
+ """a platform independant way to pass colour and style information to the front end."""
+ def __init__(self, foreground = None, background = None, bold = None, italics = None, underline = None, strikethrough = None, blink = None):
+  self.foreground = foreground
+  self.background = background
+  self.bold = bold
+  self.italics = italics
+  self.underline = underline
+  self.strikethrough = strikethrough
+  self.blink = blink

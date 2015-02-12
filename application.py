@@ -1,6 +1,6 @@
 import wx, os, multiprocessing
 maxThreads = multiprocessing.cpu_count()
-appMajorVersion = '1.2'
+appMajorVersion = '1.3'
 appMinorVersion = 'Beta'
 appVersion = '%s%s' % (appMajorVersion, (' ' + appMinorVersion if appMinorVersion else ''))
 appName = 'MMC'

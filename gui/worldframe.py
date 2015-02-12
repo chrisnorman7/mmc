@@ -16,6 +16,21 @@ class EntryCtrl(wx.TextCtrl):
   self.SetValue(v[0:i] + text + v[i:])
   if track and pos >= i:
    self.SetInsertionPoint(i + len(text))
+ 
+ def __init__(self, *args, **kwargs):
+  super(EntryCtrl, self).__init__(*args, **kwargs)
+  self.defaultFontSize = 12
+  self.defaultFontFamily = wx.FONTFAMILY_DEFAULT
+  self.defaultFontStyle = wx.FONTSTYLE_NORMAL
+  self.defaultFontWeight = wx.FONTWEIGHT_NORMAL
+  self.defaultFontParameters = {
+   'underline': False,
+   'strikethrough': False
+  }
+  f = wx.Font(self.defaultFontSize, self.defaultFontFamily, self.defaultFontStyle, self.defaultFontWeight)
+  f.SetUnderlined(self.defaultFontParameters['underline'])
+  f.SetStrikethrough(self.defaultFontParameters['strikethrough'])
+  self.SetFont(f)
 
 class OutputCtrl(wx.TextCtrl):
  """The text control used for the output window."""
@@ -36,11 +51,65 @@ class OutputCtrl(wx.TextCtrl):
  def _output(self, stuff):
   """Writes output and colours it."""
   for s in stuff:
-   if type(s) == tuple:
-    self.SetDefaultStyle(wx.TextAttr(*s))
+   if isinstance(s, world.StyleObject):
+    self.SetDefaultStyle(wx.TextAttr(s.foreground, s.background))
+    oldFont = self.GetFont()
+    newFont = wx.Font(self.defaultFontSize, self.defaultFontFamily, self.defaultFontStyle, self.defaultFontWeight)
+    if s.bold:
+     newFont.SetWeight(wx.FONTWEIGHT_BOLD)
+    else:
+     w = oldFont.GetWeight()
+     newFont.SetWeight(w if w != self.defaultFontWeight else self.defaultFontWeight)
+    if s.italics:
+     newFont.SetStyle(wx.FONTSTYLE_ITALIC)
+    else:
+     w = oldFont.GetStyle()
+     newFont.SetStyle(w if w != self.defaultFontStyle else self.defaultFontStyle)
+    if s.underline == None:
+     w = oldFont.GetUnderlined()
+     newFont.SetUnderlined(w if w != self.defaultFontParameters['underline'] else self.defaultFontParameters['underline'])
+    else:
+     newFont.SetUnderlined(s.underline)
+    if s.strikethrough == None:
+     w = oldFont.GetStrikethrough()
+     newFont.SetStrikethrough(w if w != self.defaultFontParameters['strikethrough'] else self.defaultFontParameters['strikethrough'])
+    else:
+     newFont.SetStrikethrough(s.strikethrough)
+    self.SetFont(newFont)
    else:
     self._write(s)
   self._write('\n')
+ 
+ def __init__(self, *args, **kwargs):
+  super(OutputCtrl, self).__init__(*args, **kwargs)
+  self.defaultFontSize = 12
+  self.defaultFontFamily = wx.FONTFAMILY_DEFAULT
+  self.defaultFontStyle = wx.FONTSTYLE_NORMAL
+  self.defaultFontWeight = wx.FONTWEIGHT_NORMAL
+  self.defaultFontParameters = {
+   'underline': False,
+   'strikethrough': False
+  }
+  f = wx.Font(self.defaultFontSize, self.defaultFontFamily, self.defaultFontStyle, self.defaultFontWeight)
+  f.SetUnderlined(self.defaultFontParameters['underline'])
+  f.SetStrikethrough(self.defaultFontParameters['strikethrough'])
+  self.SetFont(f)
+
+class Prompt(wx.StaticText):
+ def __init__(self, *args, **kwargs):
+  super(Prompt, self).__init__(*args, **kwargs)
+  self.defaultFontSize = 24
+  self.defaultFontFamily = wx.FONTFAMILY_DEFAULT
+  self.defaultFontStyle = wx.FONTSTYLE_NORMAL
+  self.defaultFontWeight = wx.FONTWEIGHT_BOLD
+  self.defaultFontParameters = {
+   'underline': False,
+   'strikethrough': False
+  }
+  f = wx.Font(self.defaultFontSize, self.defaultFontFamily, self.defaultFontStyle, self.defaultFontWeight)
+  f.SetUnderlined(self.defaultFontParameters['underline'])
+  f.SetStrikethrough(self.defaultFontParameters['strikethrough'])
+  self.SetFont(f)
 
 class WorldFrame(MyGui.Frame):
  """Main window object."""
@@ -93,7 +162,7 @@ class WorldFrame(MyGui.Frame):
    #self.panel.Bind(wx.EVT_KILL_FOCUS, lambda event: self.world.onFocus(False))
    self.output.Bind(wx.EVT_CHAR, self.outputHook)
    s1 = wx.BoxSizer(wx.HORIZONTAL)
-   self.prompt = wx.StaticText(self.panel)
+   self.prompt = Prompt(self.panel)
    self.entry = EntryCtrl(self.panel, style = wx.TE_RICH|wx.TE_MULTILINE, size = (1100, 200))
    self.commandIndex = 0
    wx.EVT_KEY_DOWN(self.entry, self.keyParser)
@@ -344,8 +413,6 @@ class WorldFrame(MyGui.Frame):
    sys.stdout = self.world
    sys.stderr = self.world.errorBuffer
    self.world.onFocus = lambda value: None
-   self.world.onSetColour = lambda *args: self.output.SetDefaultStyle(wx.TextAttr(*args))
-   self.world.onSetColour(*self.world.getColour())
   except Exception as e:
    wx.MessageBox(str(e), 'Problem with world file')
    return self.Close(True)
@@ -368,6 +435,7 @@ class WorldFrame(MyGui.Frame):
    }
   }
   self.SetTitle(self.world.name)
+  self.output.SetDefaultStyle(wx.TextAttr(*self.world.colours['0']))
   if self.world.config.getboolean('connection', 'autoconnect') and self.world.hostname and not self.world.invalidPort(self.world.port):
    self.openWorld()
  
