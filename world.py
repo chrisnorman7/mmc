@@ -73,6 +73,7 @@ class World(object):
  def __init__(self, filename = None):
   """Create all the default config, then you can use .load(filename) to load the config from disk."""
   self.escape = chr(27)
+  self.baseVolume = 1.0
   self.colourRe = re.compile(r'(%s\[((?:\d;)?\d{1,2})m)' % self.escape)
   encodeTest = lambda value: None if codecs.getencoder(value) else 'Traceback should be self explanitory'
   self.logEncoding = 'UTF-8'
@@ -252,7 +253,7 @@ class World(object):
    self.addAlias(*args, **kwargs)
   for args, kwargs in self.defaultConfig['triggers']:
    self.addTrigger(*args, **kwargs)
-  for k, v in self.defaultConfig['variables'].items():
+  for k, v in self.defaultConfig['variables'].iteritems():
    self.addVariable(k, v, True)
   if filename:
    d = os.path.dirname(filename)
@@ -272,7 +273,7 @@ class World(object):
   for thing in ['aliases', 'triggers']:
    stuff[thing] = [] # Populate with (args, kwargs) pairs.
    if self.config.getboolean('saving', thing):
-    for c, o in getattr(self, thing).items():
+    for c, o in getattr(self, thing).iteritems():
      stuff[thing].append(o.serialise())
   stuff['variables'] = dict()
   if self.config.getboolean('saving', 'variables'):
@@ -314,7 +315,7 @@ class World(object):
   * Alias is the title of the alias to remove.
   
   """
-  for k, v in self.aliases.items():
+  for k, v in self.aliases.iteritems():
    if v.title == alias:
     del self.aliases[k]
     return True
@@ -359,12 +360,12 @@ class World(object):
   Note: in cases where a trigger has been coded with a title, that must be used instead of the regular expression. All other triggers will have their title set to the regular expression or literal string they were created with.
   
   """
-  for k, t in self.literalTriggers.items():
+  for k, t in self.literalTriggers.iteritems():
    if t.title == trigger:
     del self.literalTriggers[k]
     return False
   else:
-   for k, t in self.triggers.items():
+   for k, t in self.triggers.iteritems():
     if t.title == trigger:
      del self.triggers[k]
      return True
@@ -395,7 +396,8 @@ class World(object):
   * If delete is True, then the variable will also be deleted.
   
   """
-  self.variables.remove(name)
+  if name in self.variables:
+   self.variables.remove(name)
   if delete and hasattr(self, name):
    delattr(self, name)
 
@@ -417,7 +419,7 @@ class World(object):
    execfile(f, self.getEnvironment())
   if self._outputThread:
    raise RuntimeError('%s (%s)' % (errors['OutputThreadStarted'], self._outputThread))
-  self._outputThread = threading.Thread(target = self._threadManager, name = 'World Thread') # Create the thread.
+  self._outputThread = OutputThread(target = self._threadManager, name = 'World Thread') # Create the thread.
   try:
    self.onOpen()
   except Exception as e:
@@ -430,7 +432,7 @@ class World(object):
   
   """
   if self.connected:
-   self.onClose()
+   #self.onClose()
    self.con.close()
    self._close() # Reset the thread and connection, and stop all sounds playing through the output.
   else:
@@ -456,7 +458,7 @@ class World(object):
   if cs and uid and password:
    for c in cs.format(u = uid, p = password).split(self.config.get('entry', 'commandsep')):
     self.writeToCon(c)
-  while 1:
+  while not self._outputThread.shouldStop():
    if self.commandQueue and (time() - self._commandInterval) >= self.config.getfloat('entry', 'commandinterval'):
     threading.Thread(name = 'Command Thread', target = self._send, args = [self.commandQueue.popleft()]).start()
    try:
@@ -464,14 +466,16 @@ class World(object):
    except Exception as msg:
     self.onError()
     self.outputStatus(str(msg)) # Print the error to the world.
-    self._close()
     break
    if output:
     self.output(output)
-  self.onClose()
+  if self.connected:
+   self.close()
+  else:
+   self.onClose()
   self.logFlush()
   self._outputThread = None # Set the thread back to it's original value.
-
+ 
  def output(self, data, process = None, sub = None, log = True):
   """
   output(data[, process[, sub[, log]]])
@@ -501,7 +505,7 @@ class World(object):
     tobject = None
     results = []
     while True:
-     if line in self.literalTriggers.keys():
+     if line in self.literalTriggers:
       trigger = self.literalTriggers[line]
       if self.matchClasses(trigger.classes):
        results.append((trigger, [], {}))
@@ -610,9 +614,8 @@ class World(object):
     sre = self.statementRe
     if self.config.getboolean('scripting', 'expandvariables') and vre:
      e = self.getEnvironment()
-     i = 1 # First occurance of a pattern 
      for t, v in vre.findall(command):
-      if v in e.keys():
+      if v in e:
        command = command.replace(t, str(e[v]))
     if self.config.getboolean('scripting', 'expandstatements') and sre:
      for t, s in sre.findall(command):
@@ -830,7 +833,7 @@ class World(object):
    g = m.groups()[1]
    filename = filename.replace(g, str(int(int(g.strip('*')) * self.random.random()) + 1))
   s = stream.FileStream(file = filename)
-  v = 1.0 + volume
+  v = self.baseVolume + volume
   if v < 0.0:
    v = 0.0
   elif v > 1.0:
@@ -929,7 +932,8 @@ class World(object):
    return (thing, m.groups(), m.groupdict())
  
  def _close(self):
-  self.con = self._outputThread = None # Reset the connection to it's default state.
+  self.con = None # Reset the connection to it's default state.
+  self._outputThread.cancel()
   self.soundOutput.stop()
  
  def help(self, thing = None):
@@ -994,7 +998,7 @@ class World(object):
       actual.append(StyleObject(foreground = fg, background = bg, bold = False, italics = False, underline = False, strikethrough = False, blink = False))
       if pc:
        actual.append('<reset>')
-     elif c in self.colours.keys(): # Found the colour.
+     elif c in self.colours: # Found the colour.
       (fg, bg) = self.colours[c]
       text = ''
       if fg:
@@ -1011,7 +1015,7 @@ class World(object):
       actual.append(StyleObject(foreground = bg, background = fg))
       if pc:
        actual.append('<%s>' % 'inverse' if chunk == '7' else '/inverse')
-     elif chunk in self.styles.keys():
+     elif chunk in self.styles:
       s, v = self.styles[chunk]
       o = StyleObject()
       setattr(o, s, v)
@@ -1053,3 +1057,15 @@ class StyleObject(object):
   self.underline = underline
   self.strikethrough = strikethrough
   self.blink = blink
+
+class OutputThread(threading.Thread):
+ """The output thread, cancelable."""
+ def __init__(self, *args, **kwargs):
+  self._cancel = threading.Event()
+  super(OutputThread, self).__init__(*args, **kwargs)
+ 
+ def cancel(self):
+  self._cancel.set()
+ 
+ def shouldStop(self):
+  return self._cancel.isSet()

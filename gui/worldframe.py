@@ -403,7 +403,7 @@ class WorldFrame(MyGui.Frame):
   self.AddAccelerator(self.CTRL|wx.ACCEL_SHIFT, ord('o'), lambda event: self.speakLine(self.outputPos + 1))
   self.AddAccelerator(self.CTRL|wx.ACCEL_SHIFT, ord('p'), lambda event: self.speakLine(len(self.world.getOutput()) - 1))
   self.AddAccelerator(self.CTRL|wx.ACCEL_SHIFT, ord('y'), lambda event: self.speakLine(0))
-  for i in range(0, 10):
+  for i in xrange(0, 10):
    self.AddAccelerator(self.ALT, ord(str(i)), lambda event, i = 10 if i == 0 else i: self.speakLine(len(self.world.getOutput()) - i))
   self.AddAccelerator(wx.ACCEL_NORMAL, wx.WXK_F2, lambda event: self.world.config.toggle('sounds', 'mastermute'))
   self.AddAccelerator(wx.ACCEL_NORMAL, wx.WXK_F3, lambda event: self.adjustVolume(-1.0))
