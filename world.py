@@ -555,12 +555,12 @@ class World(object):
    if log:
     if g['braille']:
      self.gag(-1, 'braille')
-    elif self.config.getboolean('accessibility', 'braille') and lineOk and hasWrite and hasattr(accessibility.system, 'braille'):
-     accessibility.system.braille(line)
+    elif lineOk and hasWrite:
+     self.braille(line)
     if g['voice']:
      self.gag(-1, 'voice')
-    elif self.config.getboolean('accessibility', 'speak') and lineOk and hasWrite and hasattr(accessibility.system, 'speak'):
-     accessibility.system.speak(line)
+    elif lineOk and hasWrite:
+     self.speak(line)
  
  def outputStatus(self, line):
   """
@@ -1027,6 +1027,22 @@ class World(object):
        actual.append('<Unrecognised: %s>' % chunk)
    i += 1
   return (line, actual)
+ 
+ def speak(self, *args, **kwargs):
+  """Speak arguments if speech is enabled on the world."""
+  if self.config.getboolean('accessibility', 'speak'):
+   accessibility.system.speak(*args, **kwargs)
+   return True
+  else:
+   return False
+ 
+ def braille(self, *args, **kwargs):
+  """Brailles arguments if brailling is enabled on the world."""
+  if self.config.getboolean('accessibility', 'braille'):
+   accessibility.system.braille(*args, **kwargs)
+   return True
+  else:
+   return False
 
 class ErrorBuffer(object):
  """A buffer for catching errors."""

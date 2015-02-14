@@ -1,28 +1,19 @@
 import accessible_output2.outputs.auto as ao
 
+from sys import platform
+if platform == 'darwin':
+ OSX = True
+ import os
+ from threading import Thread
+else:
+ OSX = False
+
 class System(ao.Auto):
- def speak(self, *args):
-  speak = self.get_first_available_output()
-  if hasattr(speak, 'speak'):
-   speak.speak(*args)
-   return True
-  else:
-   return False
- 
- def braille(self, *args):
-  braille = self.get_first_available_output()
-  if hasattr(braille, 'braille'):
-   braille.braille(*args)
-   return True
-  else:
-   return False
- 
- def silence(self):
-  f = self.get_first_available_output()
-  if hasattr(f, 'silence'):
-   f.silence()
-   return True
-  else:
-   return False
+ if OSX:
+  def speak(self, *args, **kwargs):
+   """Threaded speech to try and stop VoiceOver from lagging so much."""
+   t = Thread(target = os.system, args = [r'osascript -e "tell application \"voiceover\" to output \"%s\"" &' % args[0].replace('"', r'\\\"')])
+   t.start()
+   return t
 
 system = System()
