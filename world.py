@@ -2,6 +2,7 @@
 
 from telnetlib import Telnet, socket
 from sound_lib import stream, output
+from sound_lib.main import BassError
 from errors import *
 from inspect import getdoc
 from collections import deque, OrderedDict
@@ -44,11 +45,11 @@ class World(object):
 
  @property # The world's port.
  def port(self):
-  return self.config.getint('connection', 'port')
+  return self.config.get('connection', 'port')
 
  @port.setter
  def port(self, value):
-  self.config.set('connection', 'port', str(value))
+  self.config.set('connection', 'port', value)
 
  @property # The filename to load the world's settings from.
  def filename(self):
@@ -61,7 +62,11 @@ class World(object):
  @filename.setter
  def filename(self, value):
   self._filename = value
-
+ 
+ @property # The working directory of the world.
+ def directory(self):
+  return os.path.dirname(self.filename)
+ 
  @property # The command char
  def commandChar(self):
   return self.config.get('entry', 'commandchar')
@@ -70,7 +75,7 @@ class World(object):
  def commandChar(self, value):
   self.config.set('entry', 'commandchar', value)
  
- def __init__(self, filename = None):
+ def __init__(self):
   """Create all the default config, then you can use .load(filename) to load the config from disk."""
   self.escape = chr(27)
   self.baseVolume = 1.0
@@ -177,60 +182,59 @@ class World(object):
   }
   self.config = ConfManager('World properties')
   self.config.add_section('world')
-  self.config.set('world', 'name', 'Untitled World', vtitle = 'The name of the world', vvalidate = lambda value: None if value else 'World names cannot be blank')
-  self.config.set('world', 'username', '', vtitle = 'The username to use for this world', vtype = str)
-  self.config.set('world', 'password', '', vtitle = 'The password for this world (saves in plain text)', vtype = str, vkwargs = {'style': wx.TE_PASSWORD})
-  self.config.set('world', 'notes', '', vtitle = 'Notes for this world', vtype = str, vkwargs = {'style': wx.TE_RICH|wx.TE_MULTILINE})
-  self.config.set('world', 'autosave', 'True', vtitle = 'Save this world automatically when closed', vtype = bool)
+  self.config.set('world', 'name', 'Untitled World', title = 'The name of the world', validate = lambda value: None if value else 'World names cannot be blank')
+  self.config.set('world', 'username', '', title = 'The username to use for this world')
+  self.config.set('world', 'password', '', title = 'The password for this world (saves in plain text)', kwargs = {'style': wx.TE_PASSWORD})
+  self.config.set('world', 'notes', '', title = 'Notes for this world', kwargs = {'style': wx.TE_RICH|wx.TE_MULTILINE})
+  self.config.set('world', 'autosave', True, title = 'Save this world automatically when closed')
   self.config.add_section('connection')
-  self.config.set('connection', 'hostname', '', vtype = str, vtitle = 'The hostname of the world', vvalidate = lambda value: None if value else 'Without a hostname, your world will not be able to connect.')
-  self.config.set('connection', 'port', '0', vtype = int, vtitle = 'The port to use for this world', vvalidate = self.invalidPort)
-  self.config.set('connection', 'autoconnect', 'True', vtitle = 'Automatically connect this world when it opens', vtype = bool)
-  self.config.set('connection', 'connectstring', '', vtitle = 'The connection string, using {u} for username and {p} for password, and seperating the commands with your command seperator')
+  self.config.set('connection', 'hostname', '', title = 'The hostname of the world', validate = lambda value: None if value else 'Without a hostname, your world will not be able to connect.')
+  self.config.set('connection', 'port', 0, title = 'The port to use for this world', validate = self.invalidPort)
+  self.config.set('connection', 'autoconnect', True, title = 'Automatically connect this world when it opens')
+  self.config.set('connection', 'connectstring', '', title = 'The connection string, using {u} for username and {p} for password, and seperating the commands with your command seperator')
   self.config.add_section('entry')
-  self.config.set('entry', 'commandchar', '/', vtype = str, vvalidate = lambda value: None if (not re.match('[A-Za-z0-9]', value) and len(value) == 1) else 'The command character can not be a letter or a number, and must be only one character.', vtitle = 'The character to make commands get executed by the client rather than being sent straight to the mud')
-  self.config.set('entry', 'helpchar', '?', vtitle = 'The command to indicate you need help on something (clear to disable)')
-  self.config.set('entry', 'commandsep', ';', vtitle = 'The character which seperates multiple commands', vvalidate = lambda value: None if len(value) == 1 else 'Commands must be seperated by only one character')
-  self.config.set('entry', 'commandinterval', '0.0', vtitle = 'The time between sending batched commands', vtype = float, vkwargs = {'min_val': 0.0, 'increment': 0.1, 'digits': 2})
-  self.config.set('entry', 'echocommands', 'True', vtype = bool, vtitle = 'Echo commands to the output window')
-  self.config.set('entry', 'logduplicatecommands', 'False', vtitle = 'Log duplicate commands', vtype = bool)
-  self.config.set('entry', 'processaliases', 'True', vtype = bool, vtitle = 'Process aliases')
-  self.config.set('entry', 'simple', 'False', vtitle = 'When adding new aliases and triggers, send their code directly to the game after replacing arguments instead of executing them (can be changed by setting the simple flag)', vtype = bool)
-  self.config.set('entry', 'prompt', 'Entry', vtitle = 'Prompt')
-  self.config.set('entry', 'escapeclearsentry', 'True', vtitle = 'Clear the entry line when the escape key is pressed', vtype = bool)
-  self.config.set('entry', 'unicodeform', 'NFKD', vtitle = 'The unicode normalize form', vvalidate = lambda value: None if value in ['NFC', 'NFD', 'NFKC', 'NFKD'] else 'Form must be a valid form for unicodedata.normalize.')
-  self.config.set('entry', 'encoding', 'ascii', vtitle = 'Text encoding for commands sent to the server', vvalidate = encodeTest)
+  self.config.set('entry', 'commandchar', '/', validate = lambda value: None if (not re.match('[A-Za-z0-9]', value) and len(value) == 1) else 'The command character can not be a letter or a number, and must be only one character.', title = 'The character to make commands get executed by the client rather than being sent straight to the mud')
+  self.config.set('entry', 'helpchar', '?', title = 'The command to indicate you need help on something (clear to disable)')
+  self.config.set('entry', 'commandsep', ';', title = 'The character which seperates multiple commands', validate = lambda value: None if len(value) == 1 else 'Commands must be seperated by only one character')
+  self.config.set('entry', 'commandinterval', 0.0, title = 'The time between sending batched commands', kwargs = {'min_val': 0.0, 'increment': 0.1, 'digits': 2})
+  self.config.set('entry', 'echocommands', True, title = 'Echo commands to the output window')
+  self.config.set('entry', 'logduplicatecommands', False, title = 'Log duplicate commands')
+  self.config.set('entry', 'processaliases', True, title = 'Process aliases')
+  self.config.set('entry', 'simple', False, title = 'When adding new aliases and triggers, send their code directly to the game after replacing arguments instead of executing them (can be changed by setting the simple flag)')
+  self.config.set('entry', 'prompt', 'Entry', title = 'Prompt')
+  self.config.set('entry', 'escapeclearsentry', True, title = 'Clear the entry line when the escape key is pressed')
+  self.config.set('entry', 'unicodeform', 'NFKD', title = 'The unicode normalize form', validate = lambda value: None if value in ['NFC', 'NFD', 'NFKC', 'NFKD'] else 'Form must be a valid form for unicodedata.normalize.')
+  self.config.set('entry', 'encoding', 'ascii', title = 'Text encoding for commands sent to the server', validate = encodeTest)
   self.config.add_section('output')
-  self.config.set('output', 'suppressblanklines', 'True', vtype = bool, vtitle = 'Suppress blank lines in the output window')
-  self.config.set('output', 'gag', 'False', vtype = bool, vtitle = 'Gag all output')
-  self.config.set('output', 'processtriggers', 'True', vtitle = 'Process triggers', vtype = bool)
-  self.config.set('output', 'printtriggers', 'False', vtitle = 'Print the titles or regular expressions of matched triggers to the output window (useful for debugging)', vtype = bool)
-  self.config.set('output', 'printunrecognisedformatters', 'False', vtitle = 'Print unrecognised formatters to the output window', vtype = bool)
+  self.config.set('output', 'suppressblanklines', True, title = 'Suppress blank lines in the output window')
+  self.config.set('output', 'gag', False, title = 'Gag all output')
+  self.config.set('output', 'processtriggers', True, title = 'Process triggers')
+  self.config.set('output', 'printtriggers', False, title = 'Print the titles or regular expressions of matched triggers to the output window (useful for debugging)')
+  self.config.set('output', 'printunrecognisedformatters', False, title = 'Print unrecognised formatters to the output window')
   self.config.add_section('accessibility')
-  self.config.set('accessibility', 'speak', 'True', vtype = bool, vtitle = 'Speak output')
-  self.config.set('accessibility', 'braille', 'True', vtitle = 'Braille output (if supported)', vtype = bool)
-  self.config.set('accessibility', 'outputscroll', 'True', vtype = bool, vtitle = 'Allow output window scrolling')
-  self.config.set('accessibility', 'printcolours', 'False', vtitle = 'Print ANSI formatters in the output window', vtype = bool)
+  self.config.set('accessibility', 'speak', True, title = 'Speak output')
+  self.config.set('accessibility', 'braille', True, title = 'Braille output (if supported)')
+  self.config.set('accessibility', 'outputscroll', True, title = 'Allow output window scrolling')
+  self.config.set('accessibility', 'printcolours', False, title = 'Print ANSI formatters in the output window')
   self.config.add_section('logging')
-  self.config.set('logging', 'logdirectory', '', vtitle = 'Directory to store world log files', vvalidate = lambda value: None if (not value or os.path.isdir(value)) else 'Directory must exist. If you do not want logging, leave this field blank.', vcontrol = DirBrowseButton)
-  self.config.set('logging', 'loginterval', '50', vtype = int, vtitle = 'After how many lines should the log be dumped to disk', vvalidate = lambda value: None if value > 10 else 'At least 10 lines must seperate dump opperations.')
-  self.config.set('logging', 'logencoding', 'UTF-8', vtitle = 'The encoding for log files', vvalidate = encodeTest)
+  self.config.set('logging', 'logdirectory', '', title = 'Directory to store world log files', validate = lambda value: None if (not value or os.path.isdir(os.path.abspath(os.path.join(self.directory, value)))) else 'Directory must exist. If you do not want logging, leave this field blank.', control = DirBrowseButton)
+  self.config.set('logging', 'loginterval', 50, title = 'After how many lines should the log be dumped to disk', validate = lambda value: None if value > 10 else 'At least 10 lines must seperate dump opperations.')
+  self.config.set('logging', 'logencoding', 'UTF-8', title = 'The encoding for log files', validate = encodeTest)
   self.config.add_section('sounds')
-  self.config.set('sounds', 'mastermute', False, vtitle = 'Mute sounds')
-  self.config.set('sounds', 'mastervolume', 75, vtitle = 'Master volume', vvalidate = lambda value: None if value >= 0 and value <= 100 else 'Volume must be between 0 and 100.')
+  self.config.set('sounds', 'mastermute', False, title = 'Mute sounds')
+  self.config.set('sounds', 'mastervolume', 75, title = 'Master volume', validate = lambda value: None if value >= 0 and value <= 100 else 'Volume must be between 0 and 100.')
   self.config.add_section('scripting')
-  self.config.set('scripting', 'enable', 'True', vtype = bool, vtitle = 'Enable scripting')
-  self.config.set('scripting', 'expandvariables', 'True', vtitle = 'Expand variables on the command line', vtype = bool)
-  self.config.set('scripting', 'variablere', self.variableRe.pattern, vtitle = 'The regular expression variable declarations on the command line must conform too', vvalidate = lambda value: setattr(self, 'variableRe', re.compile(value)))
-  self.config.set('scripting', 'expandstatements', 'True', vtitle = 'Expand statements on the command line', vtype = bool)
-  self.config.set('scripting', 'statementre', self.statementRe.pattern, vtitle = 'The regular expression statements entered on the command line must conform too', vvalidate = lambda value: setattr(self, 'statementRe', re.compile(value)))
-  self.config.set('scripting', 'startfile', '', vtitle = 'The main script file', vcontrol = FileBrowseButton, vvalidate = lambda value: None if not value or os.path.isfile(value) else 'This field must either be blank, or contain the path to a script file.')
-  self.config.set('scripting', 'bypasscharacter', '>', vtitle = 'The command to bypass scripting on the command line')
+  self.config.set('scripting', 'enable', True, title = 'Enable scripting')
+  self.config.set('scripting', 'expandvariables', True, title = 'Expand variables on the command line')
+  self.config.set('scripting', 'variablere', self.variableRe.pattern, title = 'The regular expression variable declarations on the command line must conform too', validate = lambda value: setattr(self, 'variableRe', re.compile(value)))
+  self.config.set('scripting', 'expandstatements', True, title = 'Expand statements on the command line')
+  self.config.set('scripting', 'statementre', self.statementRe.pattern, title = 'The regular expression statements entered on the command line must conform too', validate = lambda value: setattr(self, 'statementRe', re.compile(value)))
+  self.config.set('scripting', 'startfile', '', title = 'The main script file', control = FileBrowseButton, validate = lambda value: None if not value or os.path.isfile(os.path.abspath(os.path.join(self.directory, value))) else 'This field must either be blank, or contain the path to a script file.')
+  self.config.set('scripting', 'bypasscharacter', '>', title = 'The command to bypass scripting on the command line')
   self.config.add_section('saving')
-  self.config.set('saving', 'aliases', 'False', vtype = bool, vtitle = 'Save aliases in the world file')
-  self.config.set('saving', 'triggers', 'False', vtype = bool, vtitle = 'Save triggers in the world file')
-  self.config.set('saving', 'variables', 'True', vtype = bool, vtitle = 'Save variables in the world file')
-  self.load(filename)
+  self.config.set('saving', 'aliases', False, title = 'Save aliases in the world file')
+  self.config.set('saving', 'triggers', False, title = 'Save triggers in the world file')
+  self.config.set('saving', 'variables', True, title = 'Save variables in the world file')
  
  def load(self, filename = None):
   """
@@ -243,12 +247,11 @@ class World(object):
   self.variables = deque() # The variables to save when the world is closed.
   self.classes = deque() # The currently active classes.
   if filename:
-   if not os.path.exists(filename):
-    raise IOError('File %s does not exist.' % filename)
+   self._validFile(filename)
    with open(filename, 'r') as f:
     self.defaultConfig = json.load(f)
   self.config = parser.parse_json(self.config, self.defaultConfig['config'])
-  self.soundOutput.set_volume(0.0 if self.config.get_converted('sounds', 'mastermute') else self.config.getfloat('sounds', 'mastervolume'))
+  self.soundOutput.set_volume(0.0 if self.config.get('sounds', 'mastermute') else self.config.get('sounds', 'mastervolume'))
   for args, kwargs in self.defaultConfig['aliases']:
    self.addAlias(*args, **kwargs)
   for args, kwargs in self.defaultConfig['triggers']:
@@ -258,8 +261,22 @@ class World(object):
   if filename:
    d = os.path.dirname(filename)
    if d:
-    os.chdir(d)
-   self.filename = os.path.basename(filename)
+    sys.path.insert(0, d)
+   self.filename = os.path.abspath(filename)
+  f = self.config.get('scripting', 'startfile')
+  if f:
+   f = os.path.join(os.path.dirname(self.filename), f)
+   execfile(f, self.getEnvironment())
+   if not self.connected and self.config.get('connection', 'autoconnect') and self.hostname and not self.invalidPort(self.port):
+    self.open()
+   else:
+    print '%s: (%s, %s).' % (self.config.get('connection', 'autoconnect'), self.hostname, self.port)
+ 
+ def reload(self, filename = None):
+  """Reloads the world, saving first if required."""
+  if self.config.get('world', 'autosave'):
+   self.save()
+  self.load(filename or self.filename)
  
  def save(self):
   """
@@ -272,11 +289,11 @@ class World(object):
   stuff = dict()
   for thing in ['aliases', 'triggers']:
    stuff[thing] = [] # Populate with (args, kwargs) pairs.
-   if self.config.getboolean('saving', thing):
+   if self.config.get('saving', thing):
     for c, o in getattr(self, thing).iteritems():
      stuff[thing].append(o.serialise())
   stuff['variables'] = dict()
-  if self.config.getboolean('saving', 'variables'):
+  if self.config.get('saving', 'variables'):
    for v in self.variables:
     if hasattr(self, v):
      var = getattr(self, v)
@@ -300,7 +317,7 @@ class World(object):
   
   """
   if simple == None:
-   simple = self.config.get_converted('entry', 'simple')
+   simple = self.config.get('entry', 'simple')
   if title == None:
    title = alias
   c = re.compile(alias)
@@ -337,7 +354,7 @@ class World(object):
   
   """
   if simple == None:
-   simple = self.config.get_converted('entry', 'simple')
+   simple = self.config.get('entry', 'simple')
   if title == None:
    title = trigger
   c = command if simple else self.formatCode(command)
@@ -413,10 +430,10 @@ class World(object):
   reason = self.invalidPort(self.port)
   if reason:
    raise UserError(reason)
-  self.soundOutput.start()
-  f = self.config.get('scripting', 'startfile')
-  if f:
-   execfile(f, self.getEnvironment())
+  try:
+   self.soundOutput.start()
+  except BassError as e:
+   pass # It's probably already been started.
   if self._outputThread:
    raise RuntimeError('%s (%s)' % (errors['OutputThreadStarted'], self._outputThread))
   self._outputThread = OutputThread(target = self._threadManager, name = 'World Thread') # Create the thread.
@@ -425,7 +442,7 @@ class World(object):
   except Exception as e:
    self.outputStatus('Error in self.onOpen: %s' % e)
   self._outputThread.start()
-
+ 
  def close(self):
   """
   Closes the connection to the mud.
@@ -459,7 +476,7 @@ class World(object):
    for c in cs.format(u = uid, p = password).split(self.config.get('entry', 'commandsep')):
     self.writeToCon(c)
   while not self._outputThread.shouldStop():
-   if self.commandQueue and (time() - self._commandInterval) >= self.config.getfloat('entry', 'commandinterval'):
+   if self.commandQueue and (time() - self._commandInterval) >= self.config.get('entry', 'commandinterval'):
     threading.Thread(name = 'Command Thread', target = self._send, args = [self.commandQueue.popleft()]).start()
    try:
     output = self.con.read_very_eager()
@@ -491,12 +508,12 @@ class World(object):
    data = str(data)
   data = data.replace('\r', '')
   if process == None:
-   process = self.config.getboolean('output', 'processtriggers')
+   process = self.config.get('output', 'processtriggers')
   for line in data.split('\n'):
    self.onOutput()
    if '\a' in line:
     self.onBeep()
-    line = line.replace('\a', '<beep>' if self.config.get_converted('accessibility', 'printcolours') else '')
+    line = line.replace('\a', '<beep>' if self.config.get('accessibility', 'printcolours') else '')
     if not line:
      continue
    toBeLogged = line
@@ -515,7 +532,7 @@ class World(object):
      break
     for trigger, args, kwargs in results:
      self.onTrigger()
-     if self.config.get_converted('output', 'printtriggers'):
+     if self.config.get('output', 'printtriggers'):
       self.output(trigger.title, False)
      args = [line] + list(args)
      if trigger.simple:
@@ -535,7 +552,7 @@ class World(object):
     self.outputSub = None
    line = ''.join([x for x in actual if not isinstance(x, StyleObject)])
    g = self.gagged()
-   lineOk = not self.config.getboolean('output', 'gag') and (line or not self.config.getboolean('output', 'suppressblanklines'))
+   lineOk = not self.config.get('output', 'gag') and (line or not self.config.get('output', 'suppressblanklines'))
    hw = hasattr(self.outputBuffer, 'write')
    ho = hasattr(self.outputBuffer, 'output')
    hasWrite = hw or ho
@@ -585,7 +602,7 @@ class World(object):
   self.onSend()
   if log:
    self.logCommand(command)
-  if self.config.getboolean('entry', 'echocommands'):
+  if self.config.get('entry', 'echocommands'):
    self.output(command, process = False, log = False)
   h = self.config.get('entry', 'helpchar')
   if h and command.startswith(h):
@@ -605,19 +622,19 @@ class World(object):
      process = False
      command = command[1:]
     else:
-     process = self.config.getboolean('entry', 'processaliases')
+     process = self.config.get('entry', 'processaliases')
    if command and process:
     cc = self.commandChar
-    if command.startswith(cc) and self.config.get_converted('scripting', 'enable'):
+    if command.startswith(cc) and self.config.get('scripting', 'enable'):
      return self.execute(self.normalise(command[1:]))
     vre = self.variableRe
     sre = self.statementRe
-    if self.config.getboolean('scripting', 'expandvariables') and vre:
+    if self.config.get('scripting', 'expandvariables') and vre:
      e = self.getEnvironment()
      for t, v in vre.findall(command):
       if v in e:
        command = command.replace(t, str(e[v]))
-    if self.config.getboolean('scripting', 'expandstatements') and sre:
+    if self.config.get('scripting', 'expandstatements') and sre:
      for t, s in sre.findall(command):
       command = command.replace(t, unicode(eval(s, e)))
     command = command.split(self.config.get('entry', 'commandsep'))
@@ -628,7 +645,7 @@ class World(object):
  
  def _send(self, command):
   self._commandInterval = time()
-  for alias in self.aliases.values():
+  for alias in self.aliases.itervalues():
    m = self.matchSource(command, alias)
    if m:
     self.onAlias()
@@ -670,13 +687,13 @@ class World(object):
   
   """
   self._log.append((type, time(), line))
-  if len(self._log[self._logIndex:]) >= self.config.getint('logging', 'loginterval'):
+  if len(self._log[self._logIndex:]) >= self.config.get('logging', 'loginterval'):
    self.logFlush()
    return True
   return False
  
  def logFlush(self):
-  l = self.config.get('logging', 'logdirectory')
+  l = os.path.join(self.directory, self.config.get('logging', 'logdirectory'))
   if os.path.isdir(l):
    b = u''
    for entryType, entryTime, entryLine in self._log[self._logIndex:]:
@@ -717,7 +734,7 @@ class World(object):
    self.gag(-1, 'entry')
   else:
    c = self.getCommands()
-   if not c or c[-1] != command or self.config.getboolean('entry', 'logduplicatecommands'):
+   if not c or c[-1] != command or self.config.get('entry', 'logduplicatecommands'):
     self.writeToLog('command', command)
 
  def getCommands(self):
@@ -782,7 +799,7 @@ class World(object):
    if type(system) != list:
     system = [str(system)]
   for x in system:
-   if self._gag.has_key(x):
+   if x in self._gag:
     self._gag[x] += number
    else:
     raise KeyError('No gagging system %s.' % x)
@@ -802,7 +819,7 @@ class World(object):
    if type(system) != list:
     system = [str(system)]
   for x in system:
-   if self._gag.has_key(x):
+   if x in self._gag:
     self._gag[x] = 0
    else:
     raise KeyError('No gagging system %s.' % x)
@@ -832,7 +849,10 @@ class World(object):
   if m:
    g = m.groups()[1]
    filename = filename.replace(g, str(int(int(g.strip('*')) * self.random.random()) + 1))
-  s = stream.FileStream(file = filename)
+  try:
+   s = stream.FileStream(file = filename)
+  except BassError as e:
+   raise BassError(e.code, 'Error playing file %s: %s.' % (filename, str(e)))
   v = self.baseVolume + volume
   if v < 0.0:
    v = 0.0
@@ -991,7 +1011,7 @@ class World(object):
     line = line.replace(chunk, '')
    elif i == 2: # This is the bit which tells us which colour is needed.
     i = -1 # Increment will set it to 0.
-    pc = self.config.get_converted('accessibility', 'printcolours')
+    pc = self.config.get('accessibility', 'printcolours')
     for c in chunk.split(';'):
      if c == '0': # Reset!
       (fg, bg) = self.colours['0']
@@ -1023,26 +1043,34 @@ class World(object):
       if pc:
        actual.append('<%s%s>' % ('' if v else '/', s))
      else:
-      if self.config.get_converted('output', 'printunrecognisedformatters'):
+      if self.config.get('output', 'printunrecognisedformatters'):
        actual.append('<Unrecognised: %s>' % chunk)
    i += 1
   return (line, actual)
  
  def speak(self, *args, **kwargs):
   """Speak arguments if speech is enabled on the world."""
-  if self.config.getboolean('accessibility', 'speak'):
-   accessibility.system.speak(*args, **kwargs)
-   return True
+  if self.config.get('accessibility', 'speak'):
+   t = threading.Thread(name = 'Speech thread', target = accessibility.system.speak, args = args, kwargs = kwargs)
+   t.start()
+   return t
   else:
    return False
  
  def braille(self, *args, **kwargs):
   """Brailles arguments if brailling is enabled on the world."""
-  if self.config.getboolean('accessibility', 'braille'):
-   accessibility.system.braille(*args, **kwargs)
-   return True
+  if self.config.get('accessibility', 'braille'):
+   t = threading.Thread(name = 'Braille thread', target = accessibility.system.braille, args = args, kwargs = kwargs)
+   t.start()
+   return t
   else:
    return False
+ 
+ def _validFile(self, filename):
+  if not os.path.exists(filename):
+   raise IOError('File %s does not exist.' % filename)
+  else:
+   return True
 
 class ErrorBuffer(object):
  """A buffer for catching errors."""

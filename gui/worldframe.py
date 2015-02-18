@@ -1,5 +1,6 @@
 """The gui part of the worlds framework."""
 
+debug = 0
 import wx, world, sys, accessibility, application, editor, re, threading, os, sendfile, webbrowser, finder, logparser
 from gui import MyGui
 from errors import *
@@ -7,6 +8,11 @@ from time import sleep, time
 
 class EntryCtrl(wx.TextCtrl):
  """The text control used for the entry line."""
+ def SetFont(self, *args, **kwargs):
+  r = super(EntryCtrl, self).SetFont(*args, **kwargs)
+  self.SetValue(self.GetValue())
+  return r
+ 
  def Insert(self, text, pos = None, track = True):
   """Insert text at position pos. Move insertion point if track == True, and insertion point >= insertion point."""
   i = self.GetInsertionPoint()
@@ -34,7 +40,6 @@ class EntryCtrl(wx.TextCtrl):
 
 class OutputCtrl(wx.TextCtrl):
  """The text control used for the output window."""
- 
  def write(self, text):
   """Calls self._write to stop OS X from bitching."""
   self._write(text)
@@ -42,7 +47,7 @@ class OutputCtrl(wx.TextCtrl):
  def _write(self, text):
   ip = self.GetInsertionPoint()
   super(OutputCtrl, self).write(text)
-  self.SetInsertionPoint((len(self.GetValue()) + 1) if not self.HasFocus() or self.GetParent().GetParent().world.config.get_converted('accessibility', 'outputscroll') else ip)
+  self.SetInsertionPoint((len(self.GetValue()) + 1) if not self.HasFocus() or self.GetParent().GetParent().world.config.get('accessibility', 'outputscroll') else ip)
  
  def output(self, stuff):
   """Calls self._output to stop OS X from bitching."""
@@ -80,6 +85,11 @@ class OutputCtrl(wx.TextCtrl):
     self._write(s)
   self._write('\n')
  
+ def SetFont(self, *args, **kwargs):
+  r = super(OutputCtrl, self).SetFont(*args, **kwargs)
+  self.SetValue(self.GetValue())
+  return r
+ 
  def __init__(self, *args, **kwargs):
   super(OutputCtrl, self).__init__(*args, **kwargs)
   self.defaultFontSize = 12
@@ -96,6 +106,11 @@ class OutputCtrl(wx.TextCtrl):
   self.SetFont(f)
 
 class Prompt(wx.StaticText):
+ def SetFont(self, *args, **kwargs):
+  r = super(Prompt, self).SetFont(*args, **kwargs)
+  self.SetLabel(self.GetLabel())
+  return r
+ 
  def __init__(self, *args, **kwargs):
   super(Prompt, self).__init__(*args, **kwargs)
   self.defaultFontSize = 24
@@ -144,6 +159,7 @@ class WorldFrame(MyGui.Frame):
   self._reviewKeyPresses = 0
   self.reviewKeySpeed = 0.25
   super(WorldFrame, self).__init__(None)
+  self.SetTitle('Loading...')
   self.path = filename
   self.world = None
   self.panel = wx.Panel(self)
@@ -182,6 +198,8 @@ class WorldFrame(MyGui.Frame):
    self.fileMenu.AppendSeparator()
    self.Bind(wx.EVT_MENU, self.save, self.fileMenu.Append(wx.ID_SAVE, '&Save\tCTRL+S', 'Save the current world'))
    self.Bind(wx.EVT_MENU, self.saveAs, self.fileMenu.Append(wx.ID_SAVEAS, 'S&ave As...\tCTRL+SHIFT+S', 'Save the world with a new name'))
+   self.fileMenu.AppendSeparator()
+   self.Bind(wx.EVT_MENU, lambda event: self._load(self.world.reload), self.fileMenu.Append(wx.ID_ANY, '&Reload world', 'Reloads the world, saving first if necessary'))
   self.fileMenu.AppendSeparator()
   self.Bind(wx.EVT_MENU, lambda event: self.Close(True), self.fileMenu.Append(wx.ID_EXIT, 'E&xit', 'Close the program'))
   mb.Append(self.fileMenu, '&File')
@@ -202,8 +220,6 @@ class WorldFrame(MyGui.Frame):
   mb.Append(self.helpMenu, '&Help')
   self.SetMenuBar(mb)
   self.Maximize(True)
-  self.Show(True)
-  self.init()
  
  def SetTitle(self, value):
   """Adds the application name to title."""
@@ -212,6 +228,7 @@ class WorldFrame(MyGui.Frame):
  def new(self, event = None):
   """Creates a new window and world combination."""
   w = WorldFrame('')
+  w.Show(True)
   w.world.config.get_gui().Show(True)
   if not self.world:
    self.Close(True)
@@ -226,8 +243,7 @@ class WorldFrame(MyGui.Frame):
     path = None
    dlg.Destroy()
   if path != None:
-   w = None
-   WorldFrame(path)
+   WorldFrame(path).Show(True)
    if not self.world:
     self.Close(True)
  
@@ -259,7 +275,7 @@ class WorldFrame(MyGui.Frame):
    try:
     if w.connected:
      w.close()
-    if w.config.getboolean('world', 'autosave'):
+    if w.config.get('world', 'autosave'):
      self.save() if w.filename else self.saveAs()
    except UserError as e:
     return wx.MessageBox(str(e), 'Error')
@@ -274,10 +290,7 @@ class WorldFrame(MyGui.Frame):
   self.updateInstructions['world']['name'] = lambda value: self.SetTitle(value)
   
   """
-  try:
-   self.updateInstructions[section][option](value)
-  except KeyError:
-   pass # There was no instruction found.
+  self.updateInstructions.get(section, {}).get(option, lambda value: None)(value)
  
  def onEnter(self, event = None, clear = True):
   """Enter was pressed, handle commands from the entry line."""
@@ -326,7 +339,7 @@ class WorldFrame(MyGui.Frame):
       self.commandIndex = len(self.world.getCommands()) * -1
     return
    elif kc == wx.WXK_ESCAPE:
-    if self.world.config.getboolean('entry', 'escapeclearsentry'):
+    if self.world.config.get('entry', 'escapeclearsentry'):
      return self.entry.Clear()
   event.Skip()
  
@@ -353,11 +366,8 @@ class WorldFrame(MyGui.Frame):
   else:
    self._reviewKeyPresses = 0
   self._outputPos[0] = time()
-  
-  if self.world.config.getboolean('accessibility', 'speak'):
-   accessibility.system.speak(text, True)
-  if self.world.config.getboolean('accessibility', 'braille'):
-   accessibility.system.braille(text)
+  self.world.speak(text, True)
+  self.world.braille(text)
  
  def addAlias(self, event = None):
   """The GUI front end to :func:`world.World.addAlias`."""
@@ -365,7 +375,7 @@ class WorldFrame(MyGui.Frame):
  
  def editAliases(self, event = None):
   """Edit aliases in a GUI."""
-  dlg = wx.SingleChoiceDialog(None, 'Edit aliases', 'Choose an alias to edit', [a.title for a in self.world.aliases.values()])
+  dlg = wx.SingleChoiceDialog(None, 'Edit aliases', 'Choose an alias to edit', [a.title for a in self.world.aliases.itervalues()])
   res = dlg.ShowModal()
   if res == wx.ID_OK:
    alias = self.world.aliases.values()[dlg.GetSelection()]
@@ -378,7 +388,7 @@ class WorldFrame(MyGui.Frame):
  
  def editTriggers(self, event = None):
   """Edit triggers in a GUI."""
-  triggers = self.world.literalTriggers.values() + self.world.triggers.values()
+  triggers = iter(self.world.literalTriggers.values() + self.world.triggers.values())
   dlg = wx.SingleChoiceDialog(None, 'Edit triggers', 'Choose a trigger to edit', [t.title for t in triggers])
   res = dlg.ShowModal()
   if res == wx.ID_OK:
@@ -386,40 +396,49 @@ class WorldFrame(MyGui.Frame):
    editor.TriggerFrame(trigger = trigger.pattern if type(trigger.pattern) in [unicode, str] else trigger.pattern.pattern, code = getattr(trigger, '_code'), classes = trigger.classes, regexp = trigger.regexp, simple = trigger.simple, stop = trigger.stop, title = trigger.title, add = self.world.addTrigger, remove = self.world.removeTrigger).Show(True)
   dlg.Destroy()
  
- def init(self):
+ def Show(self, *args, **kwargs):
   """Add a world to the window, and get it ready for action."""
-  if self.world != None or self.path == None:
-   return
-  self.Bind(wx.EVT_MENU, self.openWorld, self.connectionMenu.Append(wx.ID_ANY, '&Open Connection\tCTRL+K', 'Open the connection to the world'))
-  self.Bind(wx.EVT_MENU, lambda event: self.world.close(), self.connectionMenu.Append(wx.ID_ANY, '&Close connection\tCTRL+SHIFT+K', 'Close the world connection'))
-  self.Bind(wx.EVT_MENU, self.addAlias, self.programmingMenu.Append(wx.ID_ANY, '&Add alias...', 'Add an alias to the world'))
-  self.Bind(wx.EVT_MENU, self.editAliases, self.programmingMenu.Append(wx.ID_ANY, '&Edit aliases...\tCTRL+SHIFT+A', 'Edit the aliases for the world'))
-  self.Bind(wx.EVT_MENU, self.addTrigger, self.programmingMenu.Append(wx.ID_ANY, '&Add trigger...', 'Add a trigger to the world'))
-  self.Bind(wx.EVT_MENU, self.editTriggers, self.programmingMenu.Append(wx.ID_ANY, '&Edit Triggers...\tCTRL+SHIFT+T', 'Edit triggers for the world'))
-  self.Bind(wx.EVT_MENU, lambda event: self.world.config.get_gui().Show(True), self.optionsMenu.Append(wx.ID_ANY, '&World options...\tF12', 'View and edit the configuration for the current world'))
-  self.Bind(wx.EVT_MENU, lambda event: self.world.commandQueue.clear(), self.optionsMenu.Append(wx.ID_ANY, '&Clear Command Queue', 'Clear the command queue'))
-  self.AddAccelerator(self.CTRL|wx.ACCEL_SHIFT, ord('i'), lambda event: self.speakLine(self.outputPos))
-  self.AddAccelerator(self.CTRL|wx.ACCEL_SHIFT, ord('u'), lambda event: self.speakLine(self.outputPos - 1))
-  self.AddAccelerator(self.CTRL|wx.ACCEL_SHIFT, ord('o'), lambda event: self.speakLine(self.outputPos + 1))
-  self.AddAccelerator(self.CTRL|wx.ACCEL_SHIFT, ord('p'), lambda event: self.speakLine(len(self.world.getOutput()) - 1))
-  self.AddAccelerator(self.CTRL|wx.ACCEL_SHIFT, ord('y'), lambda event: self.speakLine(0))
-  for i in xrange(0, 10):
-   self.AddAccelerator(self.ALT, ord(str(i)), lambda event, i = 10 if i == 0 else i: self.speakLine(len(self.world.getOutput()) - i))
-  self.AddAccelerator(wx.ACCEL_NORMAL, wx.WXK_F2, lambda event: self.world.config.toggle('sounds', 'mastermute'))
-  self.AddAccelerator(wx.ACCEL_NORMAL, wx.WXK_F3, lambda event: self.adjustVolume(-1.0))
-  self.AddAccelerator(wx.ACCEL_NORMAL, wx.WXK_F4, lambda event: self.adjustVolume(1.0))
-  try:
-   self.world = world.World(self.path)
-   sys.stdout = self.world
-   sys.stderr = self.world.errorBuffer
-   self.world.onFocus = lambda value: None
-  except Exception as e:
-   wx.MessageBox(str(e), 'Problem with world file')
-   return self.Close(True)
-  self.world.outputBuffer = self.output
-  self.world.environment['window'] = self
-  self.world.environment['application'] = application
-  self.world.environment['find'] = finder.find
+  s = super(WorldFrame, self).Show(*args, **kwargs)
+  if self.world == None and self.path != None:
+   self.Bind(wx.EVT_MENU, self.openWorld, self.connectionMenu.Append(wx.ID_ANY, '&Open Connection\tCTRL+K', 'Open the connection to the world'))
+   self.Bind(wx.EVT_MENU, lambda event: self.world.close(), self.connectionMenu.Append(wx.ID_ANY, '&Close connection\tCTRL+SHIFT+K', 'Close the world connection'))
+   self.Bind(wx.EVT_MENU, self.addAlias, self.programmingMenu.Append(wx.ID_ANY, '&Add alias...', 'Add an alias to the world'))
+   self.Bind(wx.EVT_MENU, self.editAliases, self.programmingMenu.Append(wx.ID_ANY, '&Edit aliases...\tCTRL+SHIFT+A', 'Edit the aliases for the world'))
+   self.Bind(wx.EVT_MENU, self.addTrigger, self.programmingMenu.Append(wx.ID_ANY, '&Add trigger...', 'Add a trigger to the world'))
+   self.Bind(wx.EVT_MENU, self.editTriggers, self.programmingMenu.Append(wx.ID_ANY, '&Edit Triggers...\tCTRL+SHIFT+T', 'Edit triggers for the world'))
+   self.Bind(wx.EVT_MENU, lambda event: self.world.config.get_gui().Show(True), self.optionsMenu.Append(wx.ID_ANY, '&World options...\tF12', 'View and edit the configuration for the current world'))
+   self.Bind(wx.EVT_MENU, lambda event: self.world.commandQueue.clear(), self.optionsMenu.Append(wx.ID_ANY, '&Clear Command Queue', 'Clear the command queue'))
+   self.AddAccelerator(self.CTRL|wx.ACCEL_SHIFT, ord('i'), lambda event: self.speakLine(self.outputPos))
+   self.AddAccelerator(self.CTRL|wx.ACCEL_SHIFT, ord('u'), lambda event: self.speakLine(self.outputPos - 1))
+   self.AddAccelerator(self.CTRL|wx.ACCEL_SHIFT, ord('o'), lambda event: self.speakLine(self.outputPos + 1))
+   self.AddAccelerator(self.CTRL|wx.ACCEL_SHIFT, ord('p'), lambda event: self.speakLine(len(self.world.getOutput()) - 1))
+   self.AddAccelerator(self.CTRL|wx.ACCEL_SHIFT, ord('y'), lambda event: self.speakLine(0))
+   for i in xrange(0, 10):
+    self.AddAccelerator(self.ALT, ord(str(i)), lambda event, i = 10 if i == 0 else i: self.speakLine(len(self.world.getOutput()) - i))
+   self.AddAccelerator(wx.ACCEL_NORMAL, wx.WXK_F2, lambda event: self.world.config.toggle('sounds', 'mastermute'))
+   self.AddAccelerator(wx.ACCEL_NORMAL, wx.WXK_F3, lambda event: self.adjustVolume(-1.0))
+   self.AddAccelerator(wx.ACCEL_NORMAL, wx.WXK_F4, lambda event: self.adjustVolume(1.0))
+   try:
+    self.world = world.World()
+    if not debug:
+     sys.stdout = self.world
+     sys.stderr = self.world.errorBuffer
+    self.world.onFocus = lambda value: None
+   except IOError as e:
+    wx.MessageBox(str(e), 'Problem with world file')
+    return self.Close(True)
+   self.world.outputBuffer = self.output
+   self.world.environment['window'] = self
+   self.world.environment['application'] = application
+   self.world.environment['find'] = finder.find
+   threading.Thread(name = 'World Loader', target = self._load, kwargs = {'filename': self.path}).start()
+ 
+ def _load(self, func = None, filename = None):
+  if not func:
+   func = self.world.load
+  if not filename:
+   filename = self.path
+  func(filename)
   self.prompt.SetLabel(self.world.config.get('entry', 'prompt'))
   self.world.config.updateFunc = self.updateFunc
   self.updateInstructions = {
@@ -431,13 +450,11 @@ class WorldFrame(MyGui.Frame):
    },
    'sounds': {
     'mastervolume': lambda value: self.world.soundOutput.set_volume(float(value)),
-    'mastermute': lambda value: self.world.soundOutput.set_volume(0.0 if bool(value) else self.world.config.getfloat('sounds', 'mastervolume'))
+    'mastermute': lambda value: self.world.soundOutput.set_volume(0.0 if bool(value) else self.world.config.get('sounds', 'mastervolume'))
    }
   }
   self.SetTitle(self.world.name)
   self.output.SetDefaultStyle(wx.TextAttr(*self.world.colours['0']))
-  if self.world.config.getboolean('connection', 'autoconnect') and self.world.hostname and not self.world.invalidPort(self.world.port):
-   self.openWorld()
  
  def outputHook(self, event):
   """Move the user to the entry line, and have whatever key they pressed added to their command."""
@@ -464,10 +481,7 @@ class WorldFrame(MyGui.Frame):
  
  def _openWorld(self):
   """Backend for :func:`gui.worldframe.WorldFrame.openWorld`."""
-  try:
-   self.world.open()
-  except Exception as e:
-   wx.MessageBox(str(e), 'Error')
+  self.world.open()
  
  def onSendFile(self, event = None):
   """Send a file to the world."""
@@ -479,7 +493,7 @@ class WorldFrame(MyGui.Frame):
  
  def adjustVolume(self, amount = 1.0):
   """Adjust the output volume by small amounts."""
-  v = self.world.config.getfloat('sounds', 'mastervolume')
+  v = self.world.config.get('sounds', 'mastervolume')
   v += amount
   if v < 0.0:
    v = 0.0
@@ -488,7 +502,7 @@ class WorldFrame(MyGui.Frame):
    v = 100.0
    wx.Bell()
   self.world.config.set('sounds', 'mastervolume', int(v))
-  accessibility.system.speak('Volume set to %s.' % v)
+  self.world.speak('Volume set to %s.' % v)
  
  def onHelp(self, event = None):
   """Displays HTML help."""

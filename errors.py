@@ -6,7 +6,7 @@ errors = {
  'NoConfigFileYet': 'There is no configuration file set for this world.',
  'InvalidPort': 'Port numbers must be between 1 and 65535.',
  'NotConnectedYet': 'This world is not connected yet.',
- 'OutputThreadStarted': 'The output thread is already started.'
+ 'OutputThreadStarted': 'The output thread is already started.',
 }
 
 class UserError(Exception):

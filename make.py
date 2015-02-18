@@ -1,7 +1,8 @@
 from shutil import rmtree, copytree, copy
 from application import appName, appVersion, appMinorVersion
-from os import system, rename, listdir, walk, path, mkdir, chdir, getcwd
+from os import system, rename, listdir, walk, path, mkdir, chdir, getcwd, remove
 import zipfile, plistlib
+from time import sleep
 import sys
 
 cwd = getcwd()
@@ -15,23 +16,32 @@ dels = [
 
 for d in dels:
  if d in listdir('.'):
-  print 'Deleting %s...' % d
-  rmtree(d)
+  if path.isfile(d):
+   print 'Deleting %s...' % d
+   remove(d)
+  else:
+   print 'Removing directory: %s.' % d
+   rmtree(d)
  else:
-  print 'Directory not found so not deleting: %s.' % d
+  print 'Not found: %s.' % d
 
 if sys.platform.startswith('win'):
- system('pyinstaller -wy --clean --log-level WARN -n %s --distpath . main.py' % appName)
- output = appName
+ system('pip install -U pyinstaller & pyinstaller -wy --clean --log-level WARN -n %s --distpath . main.py' % appName)
+ try:
+  remove('main.spec')
+ except OSError as e:
+  print 'Error: %s.' % e
  xd = appName
+ output = appName
 elif sys.platform == 'darwin':
- system('py2applet main.py')
+ system('pip install -U py2app; py2applet main.py')
  n = '%s.app' % appName
  while 1:
   try:
    rename('main.app', n)
    break
-  except OSError:
+  except OSError as e:
+   pass
    continue
  output = n
  mkdir(path.join(n, 'Contents', 'Resources', 'English.lproj'))
