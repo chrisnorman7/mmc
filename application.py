@@ -4,6 +4,7 @@ appMajorVersion = '1.4'
 appMinorVersion = 'Beta'
 appVersion = '%s%s' % (appMajorVersion, (' ' + appMinorVersion if appMinorVersion else ''))
 appName = 'MMC'
+appUrl = 'www.code-metropolis.com/mmc'
 appDescription = 'A MUD client written in pure Python. Features trigger, alias, hotkey, sound and support for assistive technologies.'
 appVendorName = 'Software Metropolis'
 appDevelopers = ['Chris Norman']

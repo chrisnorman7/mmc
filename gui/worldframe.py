@@ -2,7 +2,7 @@
 
 debug = 0
 import wx, world, sys, accessibility, application, editor, re, threading, os, sendfile, webbrowser, finder, logparser
-from gui import MyGui
+import MyGui
 from errors import *
 from time import sleep, time
 
