@@ -1,9 +1,8 @@
 from shutil import rmtree, copytree, copy
 from application import appName, appVersion, appMinorVersion
 from os import system, rename, listdir, walk, path, mkdir, chdir, getcwd, remove
-import zipfile, plistlib
-from time import sleep
-import sys
+from ConfigParser import SafeConfigParser as SCP
+import zipfile, plistlib, json, sys
 
 cwd = getcwd()
 
@@ -25,6 +24,7 @@ for d in dels:
  else:
   print 'Not found: %s.' % d
 
+system('pip install -Ur requirements.txt')
 if sys.platform.startswith('win'):
  system('pip install -U pyinstaller & pyinstaller -wy --clean --log-level WARN -n %s --distpath . main.py' % appName)
  try:
@@ -74,11 +74,25 @@ for d in listdir('xtras'):
  print 'Copied %s.' % d
 
 print 'Creating Zipfile...'
-z = '%s-%s-%s.zip' % (appName, appVersion, sys.platform)
-zf = zipfile.ZipFile(z, 'w')
+z = '%s-%s-{platform}.zip' % (appName, appVersion)
+
+c = SCP()
+
+zf = zipfile.ZipFile(z.format(platform = sys.platform), 'w')
 for root, dirs, files in walk(output):
  for file in files:
   p = path.join(root, file)
   zf.write(p)
 zf.close()
 print 'Zip file created.'
+if c.read('config.ini'):
+ d = {
+  'version': appVersion,
+  'download': '%s%s' % (c.get('urls', 'download'), z)
+ }
+ with open('version.json', 'w') as f:
+  json.dump(d, f)
+ print 'Uploading Zip File...'
+ hspec = '%s@%s:' % (c.get('scp', 'username'), c.get('scp', 'hostname'))
+ system('scp "%s" %s%s' % (z.format(platform = sys.platform), hspec, c.get('scp', 'binary_destination')))
+ system('scp version.json %s%s' % (hspec, c.get('scp', 'json_destination')))

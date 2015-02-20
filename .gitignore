@@ -1,4 +1,4 @@
-q
+*.json
 .dropbox
 *.pyc
 *.ini

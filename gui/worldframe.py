@@ -3,6 +3,7 @@
 debug = 0
 import wx, world, sys, accessibility, application, editor, re, threading, os, sendfile, webbrowser, finder, logparser
 import MyGui
+import updateframe
 from errors import *
 from time import sleep, time
 
@@ -217,6 +218,7 @@ class WorldFrame(MyGui.Frame):
   self.helpMenu = wx.Menu()
   self.Bind(wx.EVT_MENU, self.onHelp, self.helpMenu.Append(wx.ID_HELP, '&Program Documentation%s' % '\tF1' if sys.platform.startswith('win') else '', 'Get help on using the program'))
   self.Bind(wx.EVT_MENU, lambda event: wx.AboutBox(application.appInfo), self.helpMenu.Append(wx.ID_ABOUT, '&About...', 'About the program'))
+  self.Bind(wx.EVT_MENU, lambda event: updateframe.UpdateFrame().Show(True), self.helpMenu.Append(wx.ID_ANY, '&Check for updates', 'Check for software updates'))
   mb.Append(self.helpMenu, '&Help')
   self.SetMenuBar(mb)
   self.Maximize(True)
